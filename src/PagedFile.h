@@ -8,8 +8,8 @@
 // level. Remember, do not expect to allocate physically consequent pages, but something like
 // page tables will help you.
 
-#ifndef __PAGED_FILE__
-#define __PAGED_FILE__
+#ifndef __PAGED_FILE_H__
+#define __PAGED_FILE_H__
 
 #include "Types.h"
 
@@ -68,5 +68,5 @@ namespace Pumper {
 
 } // namespace Pumper
 
-#endif // __PAGED_FILE__
+#endif // __PAGED_FILE_H__
 

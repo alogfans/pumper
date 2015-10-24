@@ -3,14 +3,40 @@
 //
 // Returned value management.
 
-#ifndef __STATUS__
-#define __STATUS__
+#ifndef __STATUS_H__
+#define __STATUS_H__
 
-#include "Types.h"
 #include <string>
 #include <stdlib.h>
 #include <execinfo.h>
-#include <iostream>
+#include <stdio.h>
+
+#include "Types.h"
+
+// Use the following macros to return the status.
+#define RETURN_SUCCESS() do { \
+    return STATUS_SUCCESS; \
+} while(0);
+
+#define RETURN_WARNING(msg) do { \
+    String backtrace = dump_backtrace(msg); \
+    return Status(Warning, backtrace); \
+} while(0);
+
+#define RETURN_ERROR(msg) do { \
+    String backtrace = dump_backtrace(msg); \
+    Status status = Status(Error, backtrace); \
+    printf("%s\n", backtrace.c_str()); \
+    exit(-1); \
+} while(0);
+
+#define WARNING_ASSERT(cond) do { \
+    if (!(cond)) RETURN_WARNING("Assertion Warning: " #cond) \
+} while(0);
+
+#define ERROR_ASSERT(cond) do { \
+    if (!(cond)) RETURN_ERROR("Assertion Error: " #cond) \
+} while(0);
 
 namespace Pumper {
     enum ErrorLevel {
@@ -48,49 +74,33 @@ namespace Pumper {
     // new object again and again.
     const Status STATUS_SUCCESS = Status(Success, "");
     
-#define RETURN_SUCCESS() do { \
-    return STATUS_SUCCESS; \
-} while(0);
-
-#define RETURN_WARNING(msg) do { \
-    String backtrace = dump_backtrace(msg); \
-    return Status(Warning, backtrace); \
-} while(0);
-
-#define RETURN_ERROR(msg) do { \
-    String backtrace = dump_backtrace(msg); \
-    Status status = Status(Error, backtrace); \
-    std::cerr << backtrace << std::endl; \
-    exit(-1); \
-} while(0);
-
-// The dump function. Available in UNIX-like environment like Linux.
-// Help programmers to find bug with GDB (GNU Debugger)
-String dump_backtrace(const String& message)
-{
-    const int max_depth = 16;
-    void *buffer[max_depth] = { 0 };
-    int depth;
-    char **strings;
-    String dump = "PANIC: " + message + "\nBacktrace(s) information:\n";
-    
-    depth = backtrace(buffer, max_depth);
-    strings = backtrace_symbols(buffer, depth);
-
-    if (strings == NULL)
+    // The dump function. Available in UNIX-like environment like Linux.
+    // Help programmers to find bug with GDB (GNU Debugger)
+    inline String dump_backtrace(const String& message)
     {
-        dump = dump + "backtrace() error.\n";
-    }
-    else
-    {
-        for (int i = 0; i < depth; ++i)
-            dump = dump + String(strings[i]) + "\n";
-    }
+        const int MAX_DEPTH = 16;
+        void *buffer[MAX_DEPTH] = { 0 };
+        int depth;
+        char **strings;
+        String dump = "PANIC: " + message + "\nBacktrace(s) information:\n";
+        
+        depth = backtrace(buffer, MAX_DEPTH);
+        strings = backtrace_symbols(buffer, depth);
 
-    return dump;
-}
+        if (strings == NULL)
+        {
+            dump = dump + "backtrace() error.\n";
+        }
+        else
+        {
+            for (int i = 0; i < depth; ++i)
+                dump = dump + String(strings[i]) + "\n";
+        }
+
+        return dump;
+    }
 
 } // namespace Pumper
 
-#endif // __STATUS__
+#endif // __STATUS_H__
 

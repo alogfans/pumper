@@ -3,8 +3,8 @@
 //
 // Some constants or macros of datatypes.
 
-#ifndef __TYPES__
-#define __TYPES__
+#ifndef __TYPES_H__
+#define __TYPES_H__
 
 #include <string>
 
@@ -21,8 +21,20 @@ namespace Pumper {
     
     // define String type as std::string, so have ability to replace with my own string 
     // library.
-    typedef std::string String;
+    #define String std::string
+
+    // Forbidden copy or assignment
+    class noncopyable {
+    protected:
+        noncopyable() { }
+        ~noncopyable() { }
+    private:
+        noncopyable(const noncopyable&);
+        const noncopyable& operator=(const noncopyable&);
+    };
+
+    
 } // namespace Pumper
 
-#endif // __TYPES__
+#endif // __TYPES_H__
 
