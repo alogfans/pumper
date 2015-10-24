@@ -33,6 +33,16 @@ namespace Pumper {
         const noncopyable& operator=(const noncopyable&);
     };
 
+    // Constants with type
+    const int32_t MEMORY_FD = -1;
+    const int32_t INVALID_FD = -2;
+    const int32_t INVALID_PAGE_ID = -1;
+    const int32_t ALL_PAGES = -2;
+
+    const ssize_t SIZEOF_HEADER = 32;
+    const ssize_t PAGE_ZERO_OFFSET = SIZEOF_HEADER;
+    
+    const uint32_t BUFFER_SIZE = 20;
     
 } // namespace Pumper
 

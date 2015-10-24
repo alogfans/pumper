@@ -3,6 +3,29 @@
 
 This is one implementation of simplest key/value style storage system, written by C++11.
 
+## Under Construction
+To test the incompleted system, please use [Google Test](https://github.com/google/googletest). With my configuration in `Makefile`, you should do the following steps to test it.
+
+1. Using `git clone` or other methods to fetch the current version of code to local disk. Remember that GCC
+Tools Chain is required.
+
+2. According to the description of gtest, compile the code as a static library. Then copy this archive (`libgtest.a`) and folder `include` to `gtest` directory of this project. As a result, the structure of directories may be similar to this:
+
+	```
+	pumper
+	-- build
+	-- gtest
+	   -- libgtest.a
+	   -- include
+	      -- gtest
+	         -- ...
+	-- include
+	-- src
+	-- test
+	```
+
+3. Create `build` folder, and execute `make` to compile ALL executives in `test` directory.
+
 ## MIT License
 ```
 Copyright (C) 2015 Ren Feng.

@@ -32,7 +32,7 @@ namespace Pumper {
         delete [] hash_table;
     }
     
-    bool HashTable::TryFind(int32_t fd, uint32_t page_id, uint32_t& slot_id)
+    bool HashTable::TryFind(int32_t fd, int32_t page_id, uint32_t& slot_id)
     {
         uint32_t key = hash(fd, page_id);
         HashEntry *entry = hash_table[key];
@@ -53,13 +53,13 @@ namespace Pumper {
         return false;
     }
     
-    bool HashTable::IsExisted(int32_t fd, uint32_t page_id)
+    bool HashTable::IsExisted(int32_t fd, int32_t page_id)
     {
         uint32_t slot_id;
         return TryFind(fd, page_id, slot_id);
     }
 
-    Status HashTable::Insert(int32_t fd, uint32_t page_id, uint32_t slot_id)
+    Status HashTable::Insert(int32_t fd, int32_t page_id, uint32_t slot_id)
     {
         WARNING_ASSERT(!IsExisted(fd, page_id));
         uint32_t key = hash(fd, page_id);
@@ -80,7 +80,7 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
     
-    Status HashTable::Remove(int32_t fd, uint32_t page_id)
+    Status HashTable::Remove(int32_t fd, int32_t page_id)
     {
         uint32_t key = hash(fd, page_id);
         HashEntry *entry = hash_table[key];

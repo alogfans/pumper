@@ -12,18 +12,29 @@
 #define __PAGED_FILE_H__
 
 #include "Types.h"
+#include "Status.h"
 
 namespace Pumper {
+    // The file header, comsuming the first 32 bytes of file
+    struct Header {
+        int8_t  magic[8];           // Magic bit, should be `PUMPER\0\0`.
+        int32_t alloc_pages;        // Current allocated pages.
+        int32_t free_list_head;     // Point to first free page.
+        int32_t first_page;         // First page in logical perspective.
+        uint8_t reserved[17];       // I don't know how to allocate them
+        uint16_t checksum;          // For error detection (only for header part).
+    };
 
+    class Page;
     // PagedFile Object Definition
-    class PagedFile {
-
-        // Forward declarations
-        class Status;
-        class Page;
+    class PagedFile : public noncopyable {        
     public:
         PagedFile();
         ~PagedFile();
+
+        // Create or Unlink the physical file.
+        static Status Create(const String& file);
+        static Status Unlink(const String& file);
 
         // Open or close one file.
         // In our implementation, a paged file object could open ONLY one file in disk,
@@ -35,23 +46,14 @@ namespace Pumper {
         Status Close();
         
         // Allocation management of pages
-        Status AllocatePage(uint16_t &page_id);
-        Status ReleasePage(uint16_t page_id);
+        Status AllocatePage(int32_t &page_id);
+        Status ReleasePage(int32_t page_id);
         
         // Fetch allocated page and do some operations by upper procedures.
-        Status FetchPage(uint16_t page_id, Page &page);
+        Status FetchPage(int32_t page_id, Page &page);
+        Status ForgePage(int32_t page_id = ALL_PAGES);
 
     private:
-        // The file header, comsuming the first 32 bytes of file
-        struct Header {
-            uint8_t magic[8];           // Magic bit, should be `PUMPER\0\0`.
-            uint32_t alloc_pages;       // Current allocated pages.
-            uint32_t free_list_head;    // Point to first free page.
-            uint32_t first_page;        // First page in logical perspective.
-            uint8_t reserved[17];       // I don't know how to allocate them
-            uint16_t checksum;          // For error detection (only for header part).
-        };
-        
         // file discriptor for manipulation.
         bool is_file_opened;
         int32_t fd;
@@ -63,7 +65,7 @@ namespace Pumper {
         bool is_header_dirty;
 
         // Future: locking in this layer
-        
+
     }; // PagedFile
 
 } // namespace Pumper
