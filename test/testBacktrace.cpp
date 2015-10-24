@@ -9,7 +9,7 @@ using namespace Pumper;
 Status backtrace(int depth)
 {
     if (depth == 0)
-        RETURN_ERROR("Hello World");
+        ERROR_ASSERT(1 < 0);
     backtrace(depth - 1);
     RETURN_SUCCESS();
 }

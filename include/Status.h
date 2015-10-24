@@ -31,11 +31,11 @@
 } while(0);
 
 #define WARNING_ASSERT(cond) do { \
-    if (!(cond)) RETURN_WARNING("Assertion Warning: " #cond) \
+    if (!(cond)) RETURN_WARNING("Assertion Warning: " #cond " at " __FILE__ ) \
 } while(0);
 
 #define ERROR_ASSERT(cond) do { \
-    if (!(cond)) RETURN_ERROR("Assertion Error: " #cond) \
+    if (!(cond)) RETURN_ERROR("Assertion Error: " #cond " at " __FILE__ ) \
 } while(0);
 
 namespace Pumper {
