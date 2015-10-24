@@ -108,15 +108,15 @@ namespace Pumper {
 
     Status HashTable::PrintDebugInfo()
     {
-        printf("HashTable: Debug Info\n");
+        printf("HashTable Debug Info (fd, page_id, slot_id)\n");
         for (uint32_t i = 0; i < slots; ++i)
         {
-            printf("Bucket %d: ", i);
+            printf("#%d: ", i);
 
             HashEntry *entry = hash_table[i];
             while (entry != NULL)
             {
-                printf("[fd=%d, page_id=%d, slot_id=%d]-> ", 
+                printf("[%d, %d, %d]-> ", 
                     entry->fd, entry->page_id, entry->slot_id);
                 HashEntry *next = entry->next;
                 entry = next;
