@@ -55,6 +55,11 @@ namespace Pumper {
             this->backtrace = backtrace;
         }
 
+        bool operator==(const Status& that) const
+        {
+            return this->error_level == that.error_level && this->backtrace == that.backtrace;
+        }
+
         String GetBacktrace() 
         {
             return backtrace;

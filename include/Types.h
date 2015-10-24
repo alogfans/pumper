@@ -21,7 +21,7 @@ namespace Pumper {
     
     // define String type as std::string, so have ability to replace with my own string 
     // library.
-    #define String std::string
+    typedef std::string String;
 
     // Forbidden copy or assignment
     class noncopyable {
