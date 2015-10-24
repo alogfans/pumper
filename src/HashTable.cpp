@@ -19,7 +19,7 @@ namespace Pumper {
 
     HashTable::~HashTable()
     {
-        for (int i = 0; i < slots; i++)
+        for (uint32_t i = 0; i < slots; i++)
         {
             HashEntry *entry = hash_table[i];
             while (entry != NULL)
@@ -109,7 +109,7 @@ namespace Pumper {
     Status HashTable::PrintDebugInfo()
     {
         printf("HashTable: Debug Info\n");
-        for (int i = 0; i < slots; ++i)
+        for (uint32_t i = 0; i < slots; ++i)
         {
             printf("Bucket %d: ", i);
 
