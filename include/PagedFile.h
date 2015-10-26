@@ -21,7 +21,7 @@ namespace Pumper {
         int32_t alloc_pages;        // Current allocated pages.
         int32_t free_list_head;     // Point to first free page.
         int32_t first_page;         // First page in logical perspective.
-        uint8_t reserved[17];       // I don't know how to allocate them
+        int8_t reserved[17];       // I don't know how to allocate them
         uint16_t checksum;          // For error detection (only for header part).
     };
 
@@ -50,9 +50,9 @@ namespace Pumper {
         Status ReleasePage(int32_t page_id);
         
         // Fetch allocated page and do some operations by upper procedures.
-        // Status FetchPage(int32_t page_id, Page &page);
+        Status FetchPage(int32_t page_id, int8_t** page);
         Status ForcePage(int32_t page_id = ALL_PAGES);
-
+        Status UnpinPage(int32_t page_id);
     private:
         // file discriptor for manipulation.
         bool is_file_opened;

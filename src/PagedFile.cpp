@@ -30,7 +30,7 @@ namespace Pumper {
         int32_t new_fd;
         Header new_header;
 
-        WARNING_ASSERT(!access(file.c_str(), F_OK));
+        WARNING_ASSERT(access(file.c_str(), F_OK));
         new_fd = open(file.c_str(), O_CREAT | O_WRONLY, 0664);
         ERROR_ASSERT(new_fd >= 0);
         
@@ -114,13 +114,13 @@ namespace Pumper {
     
     Status PagedFile::AllocatePage(int32_t &page_id)
     {
-        uint8_t * raw_page;
+        int8_t * raw_page;
 
         // if there is a free page, reuse it.
         if (header_content.free_list_head == INVALID_PAGE_ID)
         {
             Buffer::GetBuffer()->FetchPage(fd, header_content.alloc_pages, &raw_page, false);
-            memset(&raw_page, 0, PAGE_SIZE);
+            memset(raw_page, 0, PAGE_SIZE);
             page_id = header_content.alloc_pages;
             header_content.alloc_pages++;
         }
@@ -133,31 +133,39 @@ namespace Pumper {
             header_content.free_list_head = *(int32_t *) raw_page;            
         }
 
+        is_header_dirty = true;
         Buffer::GetBuffer()->UnpinPage(fd, page_id);
         RETURN_SUCCESS();
     }
 
     Status PagedFile::ReleasePage(int32_t page_id)
     {
-        uint8_t * raw_page;
+        int8_t * raw_page;
 
         Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
          *(int32_t *) raw_page = header_content.free_list_head;
         Buffer::GetBuffer()->UnpinPage(fd, page_id);
         header_content.free_list_head = page_id;
 
+        is_header_dirty = true;
         RETURN_SUCCESS();
     }
     
-    /*
-    Status PagedFile::FetchPage(int32_t page_id, Page &page)
+
+    Status PagedFile::FetchPage(int32_t page_id, int8_t** raw_page)
     {
-        uint8_t * raw_page;
-        Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
-        page.OpenPage(page_id, raw_page);
+        //int8_t * raw_page;
+        Buffer::GetBuffer()->FetchPage(fd, page_id, raw_page);
+        // page.OpenPage(page_id, *raw_page);
         RETURN_SUCCESS();
     }
-    */
+
+    Status PagedFile::UnpinPage(int32_t page_id)
+    {
+        Buffer::GetBuffer()->MarkDirty(fd, page_id);
+        Buffer::GetBuffer()->UnpinPage(fd, page_id);
+        RETURN_SUCCESS();
+    }
 
     Status PagedFile::ForcePage(int32_t page_id)
     {

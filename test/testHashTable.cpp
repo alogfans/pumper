@@ -26,7 +26,7 @@ TEST(hashtable_test, random_condition)
     HashTable hash_table(1);
     for (int i = 0; i < 10000; i++)
     	hash_table.Insert(i, i, i);
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 10000 - 1; i >= 0; i--) {
         if (i % 13 == 0) {
             Status status = hash_table.Remove(i, i);
             EXPECT_EQ(status, STATUS_SUCCESS);           

@@ -26,7 +26,7 @@ namespace Pumper {
         // about locks!
         // It could also allocate a new physical page with page number, but read_physical_page
         // should be set FALSE.
-        Status FetchPage(int32_t fd, int32_t page_id, uint8_t** page, bool read_physical_page = true,
+        Status FetchPage(int32_t fd, int32_t page_id, int8_t** page, bool read_physical_page = true,
             bool allow_multiple_pins = true);
 
         // Unpin a page so that it can be discarded from the buffer.
@@ -55,8 +55,8 @@ namespace Pumper {
         Status enqueue_slot(int32_t slot_id);
         Status enqueue_free(int32_t slot_id);
         Status allocate_slot(int32_t& slot_id);
-        Status read_page(int32_t fd, int32_t page_id, uint8_t* mapping);
-        Status write_page(int32_t fd, int32_t page_id, uint8_t* mapping);
+        Status read_page(int32_t fd, int32_t page_id, int8_t* mapping);
+        Status write_page(int32_t fd, int32_t page_id, int8_t* mapping);
         
         static Buffer *instance;
 
@@ -67,13 +67,13 @@ namespace Pumper {
             int32_t fd;
             int32_t page_id;
             bool is_dirty;
-            uint8_t * mapping;              // Mapping to memory area
+            int8_t * mapping;              // Mapping to memory area
         };
 
         BufferChain buffer_chain[BUFFER_SIZE];
         HashTable hash_table;
 
-        int32_t free_list_begin;            // The first index of free buffer space
+        int32_t free_list_head;             // The first index of free buffer space
         int32_t first, last;                // First and last element in LRU queue
     }; // Buffer
 

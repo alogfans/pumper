@@ -33,9 +33,9 @@ namespace Pumper {
         Status PrintDebugInfo();
 
     private:
-        uint32_t hash(int32_t fd, int32_t page_id)
+        int32_t hash(int32_t fd, int32_t page_id)
         {
-            return ((uint32_t) (fd + page_id)) % slots;
+            return ((int32_t) (fd + page_id)) % slots;
         }
 
         struct HashEntry {

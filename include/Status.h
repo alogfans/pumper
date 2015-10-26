@@ -20,22 +20,23 @@
 
 #define RETURN_WARNING(msg) do { \
     String backtrace = dump_backtrace(msg); \
+    printf("%s(%s:%d) %s\n", __func__, __FILE__, __LINE__, backtrace.c_str()); \
     return Status(Warning, backtrace); \
 } while(0);
 
 #define RETURN_ERROR(msg) do { \
     String backtrace = dump_backtrace(msg); \
     Status status = Status(Error, backtrace); \
-    printf("%s\n", backtrace.c_str()); \
+    printf("%s(%s:%d) %s\n", __func__, __FILE__, __LINE__, backtrace.c_str()); \
     exit(-1); \
 } while(0);
 
 #define WARNING_ASSERT(cond) do { \
-    if (!(cond)) RETURN_WARNING("Assertion Warning: " #cond " at " __FILE__ ) \
+    if (!(cond)) RETURN_WARNING("Assertion Warning: " #cond) \
 } while(0);
 
 #define ERROR_ASSERT(cond) do { \
-    if (!(cond)) RETURN_ERROR("Assertion Error: " #cond " at " __FILE__ ) \
+    if (!(cond)) RETURN_ERROR("Assertion Error: " #cond) \
 } while(0);
 
 #define RETHROW_ON_EXCEPTION(cond) do { \
@@ -87,7 +88,7 @@ namespace Pumper {
     
     // The dump function. Available in UNIX-like environment like Linux.
     // Help programmers to find bug with GDB (GNU Debugger)
-    inline String dump_backtrace(const String& message)
+    inline static String dump_backtrace(const String& message)
     {
         const int MAX_DEPTH = 16;
         void *buffer[MAX_DEPTH] = { 0 };

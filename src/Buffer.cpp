@@ -23,16 +23,17 @@ namespace Pumper {
     {
         for (int i = 0; i < BUFFER_SIZE; i++)
         {
-            buffer_chain[i].prev = i - 1;
-            buffer_chain[i].next = i + 1;
-            buffer_chain[i].mapping = new uint8_t[PAGE_SIZE];
+            buffer_chain[i].prev = (i == 0 ? INVALID_PAGE_ID : i - 1);
+            buffer_chain[i].next = (i == BUFFER_SIZE - 1 ? INVALID_PAGE_ID : i + 1);
+
+            buffer_chain[i].mapping = new int8_t[PAGE_SIZE];
             ERROR_ASSERT(buffer_chain[i].mapping);
             buffer_chain[i].fd = INVALID_FD;
             buffer_chain[i].page_id = INVALID_PAGE_ID;
             buffer_chain[i].pin_count = 0;
         }
 
-        free_list_begin = INVALID_SLOT_ID;
+        free_list_head = 0;
         first = INVALID_SLOT_ID;
         last = INVALID_SLOT_ID;
     }
@@ -57,7 +58,7 @@ namespace Pumper {
         return instance;
     }
 
-    Status Buffer::FetchPage(int32_t fd, int32_t page_id, uint8_t** page, bool read_physical_page, 
+    Status Buffer::FetchPage(int32_t fd, int32_t page_id, int8_t** page, bool read_physical_page, 
         bool allow_multiple_pins)
     {
         int32_t slot_id = 0;
@@ -65,7 +66,7 @@ namespace Pumper {
         {
             // The slot exists, we should check if it's able to pin. Then pin it in the buffer
             WARNING_ASSERT(slot_id >= 0 && slot_id < BUFFER_SIZE);
-            WARNING_ASSERT(allow_multiple_pins == false && buffer_chain[slot_id].pin_count > 0);
+            WARNING_ASSERT(!(allow_multiple_pins == false && buffer_chain[slot_id].pin_count > 0));
             buffer_chain[slot_id].pin_count++;
 
             // Putting in front of LRU queue
@@ -91,6 +92,7 @@ namespace Pumper {
                 return status;
             }
 
+            // RETHROW_ON_EXCEPTION(enqueue_slot(slot_id));
             // Initialize slot entry
             buffer_chain[slot_id].fd = fd;
             buffer_chain[slot_id].page_id = page_id;
@@ -99,30 +101,33 @@ namespace Pumper {
         }
 
         *page = buffer_chain[slot_id].mapping;
+        PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
     Status Buffer::UnpinPage(int32_t fd, int32_t page_id)
     {
         int32_t slot_id = 0;
-        WARNING_ASSERT(!hash_table.TryFind(fd, page_id, slot_id));
-        WARNING_ASSERT(!buffer_chain[slot_id].pin_count);
+        WARNING_ASSERT(hash_table.TryFind(fd, page_id, slot_id));
+        WARNING_ASSERT(buffer_chain[slot_id].pin_count > 0);
         if ((--buffer_chain[slot_id].pin_count) == 0)
         {
             RETHROW_ON_EXCEPTION(unlink_slot(slot_id));
             RETHROW_ON_EXCEPTION(enqueue_slot(slot_id));
         }
+        PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
     Status Buffer::MarkDirty(int32_t fd, int32_t page_id)
     {
         int32_t slot_id = 0;
-        WARNING_ASSERT(!hash_table.TryFind(fd, page_id, slot_id));
-        WARNING_ASSERT(!buffer_chain[slot_id].pin_count);
+        WARNING_ASSERT(hash_table.TryFind(fd, page_id, slot_id));
+        WARNING_ASSERT(buffer_chain[slot_id].pin_count);
         buffer_chain[slot_id].is_dirty = true;
         RETHROW_ON_EXCEPTION(unlink_slot(slot_id));
         RETHROW_ON_EXCEPTION(enqueue_slot(slot_id));
+        PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -131,22 +136,36 @@ namespace Pumper {
         int32_t slot_id = first;
         while (slot_id != INVALID_SLOT_ID)
         {
-            if (buffer_chain[slot_id].fd == fd && !buffer_chain[slot_id].pin_count)
+            int32_t next = buffer_chain[slot_id].next;
+            if (buffer_chain[slot_id].fd == fd )
             {
-                if (buffer_chain[slot_id].is_dirty)
+                if (buffer_chain[slot_id].pin_count)
                 {
-                    RETHROW_ON_EXCEPTION(write_page(fd, buffer_chain[slot_id].page_id, 
-                        buffer_chain[slot_id].mapping));
-                    buffer_chain[slot_id].is_dirty = false;
+                    // If there is a page pinned, it's NOT expected, but we don't
+                    // want to interrupt the process.
+                    // Will use logger to replace direct screen output.
+                    printf("Unexpected pinned page that unable to flush: fd=%d, page=%d\n", 
+                        fd, buffer_chain[slot_id].page_id);
                 }
+                else
+                {
+                    if (buffer_chain[slot_id].is_dirty)
+                    {
+                        RETHROW_ON_EXCEPTION(write_page(fd, buffer_chain[slot_id].page_id, 
+                            buffer_chain[slot_id].mapping));
+                        buffer_chain[slot_id].is_dirty = false;
+                    }
 
-                RETHROW_ON_EXCEPTION(hash_table.Remove(fd, slot_id));
-                RETHROW_ON_EXCEPTION(unlink_slot(slot_id));
-                RETHROW_ON_EXCEPTION(enqueue_free(slot_id));
+                    RETHROW_ON_EXCEPTION(hash_table.Remove(buffer_chain[slot_id].fd,
+                        buffer_chain[slot_id].page_id));
+                    RETHROW_ON_EXCEPTION(unlink_slot(slot_id));
+                    RETHROW_ON_EXCEPTION(enqueue_free(slot_id));      
+                }
             }
 
-            slot_id = buffer_chain[slot_id].next;
+            slot_id = next;
         }
+        PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -155,6 +174,7 @@ namespace Pumper {
         int32_t slot_id = first;
         while (slot_id != INVALID_SLOT_ID)
         {
+            int32_t next = buffer_chain[slot_id].next;
             if (!buffer_chain[slot_id].pin_count)
             {
                 RETHROW_ON_EXCEPTION(hash_table.Remove(buffer_chain[slot_id].fd, 
@@ -163,8 +183,9 @@ namespace Pumper {
                 RETHROW_ON_EXCEPTION(enqueue_free(slot_id));                
             }
 
-            slot_id = buffer_chain[slot_id].next;
+            slot_id = next;
         }
+        PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -173,6 +194,7 @@ namespace Pumper {
         int32_t slot_id = first;
         while (slot_id != INVALID_SLOT_ID)
         {
+            int32_t next = buffer_chain[slot_id].next;
             if (buffer_chain[slot_id].fd == fd && (page_id == ALL_PAGES || 
                 buffer_chain[slot_id].page_id == page_id))
             {
@@ -184,7 +206,7 @@ namespace Pumper {
                 }
             }
 
-            slot_id = buffer_chain[slot_id].next;
+            slot_id = next;
         }
         RETURN_SUCCESS();
     }
@@ -197,7 +219,7 @@ namespace Pumper {
         int32_t slot_id = first;
         while (slot_id != INVALID_SLOT_ID)
         {
-            printf("%7d %2d %7d %9d %d\n", 
+            printf("%7d %2d %7d %9d %8d\n", 
                 slot_id,
                 buffer_chain[slot_id].fd,
                 buffer_chain[slot_id].page_id,
@@ -206,7 +228,7 @@ namespace Pumper {
 
             slot_id = buffer_chain[slot_id].next;
         }
-        RETURN_SUCCESS();       
+        RETURN_SUCCESS();
     }
 
     Status Buffer::unlink_slot(int32_t slot_id)
@@ -248,8 +270,8 @@ namespace Pumper {
     {
         WARNING_ASSERT(slot_id >= 0 && slot_id < BUFFER_SIZE);
 
-        buffer_chain[slot_id].next = free_list_begin;
-        free_list_begin = slot_id;
+        buffer_chain[slot_id].next = free_list_head;
+        free_list_head = slot_id;
 
         RETURN_SUCCESS();
     }
@@ -257,10 +279,10 @@ namespace Pumper {
     Status Buffer::allocate_slot(int32_t& slot_id)
     {
         // If there is element in free list, reuse it
-        if (free_list_begin != INVALID_SLOT_ID)
+        if (free_list_head != INVALID_SLOT_ID)
         {
-            slot_id = free_list_begin;
-            free_list_begin = buffer_chain[free_list_begin].next;
+            slot_id = free_list_head;
+            free_list_head = buffer_chain[free_list_head].next;
         }
         else
         {
@@ -268,7 +290,7 @@ namespace Pumper {
                 if (!buffer_chain[slot_id].pin_count)
                     break;
 
-            WARNING_ASSERT(slot_id == INVALID_SLOT_ID);
+            WARNING_ASSERT(slot_id != INVALID_SLOT_ID);
 
             if (buffer_chain[slot_id].is_dirty)
                 RETHROW_ON_EXCEPTION(ForcePage(buffer_chain[slot_id].fd, buffer_chain[slot_id].page_id));
@@ -280,18 +302,20 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
-    Status Buffer::read_page(int32_t fd, int32_t page_id, uint8_t* mapping)
+    Status Buffer::read_page(int32_t fd, int32_t page_id, int8_t* mapping)
     {
+        printf("Read operation: fd=%d, page=%d\n", fd, page_id);
         int32_t offset = PAGE_ZERO_OFFSET + PAGE_SIZE * page_id;
-        WARNING_ASSERT(!lseek(fd, offset, L_SET));
+        WARNING_ASSERT(lseek(fd, offset, SEEK_SET));
         WARNING_ASSERT(read(fd, mapping, PAGE_SIZE) == PAGE_SIZE);
         RETURN_SUCCESS();
     }
 
-    Status Buffer::write_page(int32_t fd, int32_t page_id, uint8_t* mapping)
+    Status Buffer::write_page(int32_t fd, int32_t page_id, int8_t* mapping)
     {
+        printf("Write operation: fd=%d, page=%d\n", fd, page_id);
         int32_t offset = PAGE_ZERO_OFFSET + PAGE_SIZE * page_id;
-        WARNING_ASSERT(!lseek(fd, offset, L_SET));
+        WARNING_ASSERT(lseek(fd, offset, SEEK_SET));
         WARNING_ASSERT(write(fd, mapping, PAGE_SIZE) == PAGE_SIZE);
         RETURN_SUCCESS();
     }
