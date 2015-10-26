@@ -114,12 +114,13 @@ namespace Pumper {
     
     Status PagedFile::AllocatePage(int32_t &page_id)
     {
-        void * raw_page;
+        uint8_t * raw_page;
 
         // if there is a free page, reuse it.
         if (header_content.free_list_head == INVALID_PAGE_ID)
         {
-            Buffer::GetBuffer()->AllocatePage(fd, header_content.alloc_pages);
+            Buffer::GetBuffer()->FetchPage(fd, header_content.alloc_pages, &raw_page, false);
+            memset(&raw_page, 0, PAGE_SIZE);
             page_id = header_content.alloc_pages;
             header_content.alloc_pages++;
         }
@@ -129,36 +130,38 @@ namespace Pumper {
             Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
             // For those pages that have been freed, the first 4 bytes will be reserved
             // to the next of free page chain. If it's used, it will become useless.
-            header_content.free_list_head = *(int32_t *) raw_page;
-            Buffer::GetBuffer()->DecreaseReference(fd, page_id);
+            header_content.free_list_head = *(int32_t *) raw_page;            
         }
 
+        Buffer::GetBuffer()->UnpinPage(fd, page_id);
         RETURN_SUCCESS();
     }
 
     Status PagedFile::ReleasePage(int32_t page_id)
     {
-        void * raw_page;
+        uint8_t * raw_page;
 
         Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
          *(int32_t *) raw_page = header_content.free_list_head;
-        Buffer::GetBuffer()->DecreaseReference(fd, page_id);
+        Buffer::GetBuffer()->UnpinPage(fd, page_id);
         header_content.free_list_head = page_id;
 
         RETURN_SUCCESS();
     }
     
+    /*
     Status PagedFile::FetchPage(int32_t page_id, Page &page)
     {
-        void * raw_page;
+        uint8_t * raw_page;
         Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
         page.OpenPage(page_id, raw_page);
         RETURN_SUCCESS();
     }
+    */
 
-    Status PagedFile::ForgePage(int32_t page_id)
+    Status PagedFile::ForcePage(int32_t page_id)
     {
-        return Buffer::GetBuffer()->ForgePage(fd, page_id);
+        return Buffer::GetBuffer()->ForcePage(fd, page_id);
     }
 
 } // namespace Pumper

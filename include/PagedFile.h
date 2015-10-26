@@ -50,8 +50,8 @@ namespace Pumper {
         Status ReleasePage(int32_t page_id);
         
         // Fetch allocated page and do some operations by upper procedures.
-        Status FetchPage(int32_t page_id, Page &page);
-        Status ForgePage(int32_t page_id = ALL_PAGES);
+        // Status FetchPage(int32_t page_id, Page &page);
+        Status ForcePage(int32_t page_id = ALL_PAGES);
 
     private:
         // file discriptor for manipulation.

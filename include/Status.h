@@ -38,6 +38,12 @@
     if (!(cond)) RETURN_ERROR("Assertion Error: " #cond " at " __FILE__ ) \
 } while(0);
 
+#define RETHROW_ON_EXCEPTION(cond) do { \
+    ::Pumper::Status status = (cond); \
+    if (!(status == STATUS_SUCCESS)) \
+        return status; \
+} while(0);
+
 namespace Pumper {
     enum ErrorLevel {
         Success = 0,

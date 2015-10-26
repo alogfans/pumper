@@ -8,18 +8,18 @@
 #include "Status.h"
 
 namespace Pumper {
-    HashTable::HashTable(uint32_t slots)
+    HashTable::HashTable(int32_t slots)
     {
         this->slots = slots;
         ERROR_ASSERT(slots > 0);
         hash_table = new HashEntry* [slots];
-        for (uint32_t i = 0; i < slots; i++)
+        for (int32_t i = 0; i < slots; i++)
             hash_table[i] = NULL;
     }
 
     HashTable::~HashTable()
     {
-        for (uint32_t i = 0; i < slots; i++)
+        for (int32_t i = 0; i < slots; i++)
         {
             HashEntry *entry = hash_table[i];
             while (entry != NULL)
@@ -32,9 +32,9 @@ namespace Pumper {
         delete [] hash_table;
     }
     
-    bool HashTable::TryFind(int32_t fd, int32_t page_id, uint32_t& slot_id)
+    bool HashTable::TryFind(int32_t fd, int32_t page_id, int32_t& slot_id)
     {
-        uint32_t key = hash(fd, page_id);
+        int32_t key = hash(fd, page_id);
         HashEntry *entry = hash_table[key];
 
         while (entry != NULL)
@@ -55,14 +55,14 @@ namespace Pumper {
     
     bool HashTable::IsExisted(int32_t fd, int32_t page_id)
     {
-        uint32_t slot_id;
+        int32_t slot_id;
         return TryFind(fd, page_id, slot_id);
     }
 
-    Status HashTable::Insert(int32_t fd, int32_t page_id, uint32_t slot_id)
+    Status HashTable::Insert(int32_t fd, int32_t page_id, int32_t slot_id)
     {
         WARNING_ASSERT(!IsExisted(fd, page_id));
-        uint32_t key = hash(fd, page_id);
+        int32_t key = hash(fd, page_id);
         HashEntry *new_entry = new HashEntry();
         WARNING_ASSERT(new_entry);
 
@@ -82,7 +82,7 @@ namespace Pumper {
     
     Status HashTable::Remove(int32_t fd, int32_t page_id)
     {
-        uint32_t key = hash(fd, page_id);
+        int32_t key = hash(fd, page_id);
         HashEntry *entry = hash_table[key];
 
         while (entry != NULL)
@@ -109,7 +109,7 @@ namespace Pumper {
     Status HashTable::PrintDebugInfo()
     {
         printf("HashTable Debug Info (fd, page_id, slot_id)\n");
-        for (uint32_t i = 0; i < slots; ++i)
+        for (int32_t i = 0; i < slots; ++i)
         {
             printf("#%d: ", i);
 

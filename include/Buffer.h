@@ -10,31 +10,27 @@
 
 #include "Types.h"
 #include "Status.h"
+#include "HashTable.h"
 
 namespace Pumper {
-    // Buffer Object Definition
-    class Page;
-    class HashTable;
-
     class Buffer: public noncopyable {
         // Forward declarations
     public:
-        Buffer();
         ~Buffer();
 
+        // Singleton interface. Will drop an instance, and constructor is forbidden outside it
         static Buffer* GetBuffer();
 
         // Fetch a existed page in a opened file discriptor, it will return RAW page shadow
         // in memory. The last param allows user to fetch a page more than once. But be caseful
         // about locks!
-        Status FetchPage(int32_t fd, int32_t page_id, void** page, bool allow_multiple_refs = true);
+        // It could also allocate a new physical page with page number, but read_physical_page
+        // should be set FALSE.
+        Status FetchPage(int32_t fd, int32_t page_id, uint8_t** page, bool read_physical_page = true,
+            bool allow_multiple_pins = true);
 
-        // Allocate a new physical page with page number page_id.
-        Status AllocatePage(int32_t fd, int32_t page_id);
-
-        // Decrease the reference counter of this page. If ref counter reaches zero, will 
-        // flush this page.
-        Status DecreaseReference(int32_t fd, int32_t page_id);
+        // Unpin a page so that it can be discarded from the buffer.
+        Status UnpinPage(int32_t fd, int32_t page_id);
 
         // If the page are modified, it should be called for flush or forge.
         Status MarkDirty(int32_t fd, int32_t page_id);
@@ -47,24 +43,38 @@ namespace Pumper {
 
         // Update all items that marked dirty to disk (or single page), but do not remove 
         // it from buffer.
-        Status ForgePage(int32_t fd, int32_t page_id);
+        Status ForcePage(int32_t fd, int32_t page_id = ALL_PAGES);
 
         // Print debugging information.
         Status PrintDebugInfo();
 
     private:
+        // Note: this is singleton pattern!
+        Buffer();
+        Status unlink_slot(int32_t slot_id);
+        Status enqueue_slot(int32_t slot_id);
+        Status enqueue_free(int32_t slot_id);
+        Status allocate_slot(int32_t& slot_id);
+        Status read_page(int32_t fd, int32_t page_id, uint8_t* mapping);
+        Status write_page(int32_t fd, int32_t page_id, uint8_t* mapping);
+        
+        static Buffer *instance;
+
         struct BufferChain {
-            int32_t previous, next;         // Previous and Next index of the chain
-            int32_t ref_count;              // Reference counter
+            int32_t prev, next;             // Previous and Next index of the chain
+            int32_t pin_count;              // Pin counter
 
             int32_t fd;
-            uint32_t page_id;
+            int32_t page_id;
             bool is_dirty;
-            void * mapping;                 // Mapping to memory area
+            uint8_t * mapping;              // Mapping to memory area
         };
 
         BufferChain buffer_chain[BUFFER_SIZE];
-        HashTable *hash_table;
+        HashTable hash_table;
+
+        int32_t free_list_begin;            // The first index of free buffer space
+        int32_t first, last;                // First and last element in LRU queue
     }; // Buffer
 
 } // namespace Pumper
