@@ -21,7 +21,7 @@ namespace Pumper {
         int32_t alloc_pages;        // Current allocated pages.
         int32_t free_list_head;     // Point to first free page.
         int32_t first_page;         // First page in logical perspective.
-        int8_t reserved[17];       // I don't know how to allocate them
+        int8_t reserved[17];        // I don't know how to allocate them
         uint16_t checksum;          // For error detection (only for header part).
     };
 
@@ -42,7 +42,6 @@ namespace Pumper {
         // be corrupted and the system will shut down. We supply open `memory file` 
         // function, without modify hard disk, but most functions work well like disk.
         Status OpenFile(const String& file);
-        Status OpenMemory();
         Status Close();
         
         // Allocation management of pages
@@ -54,7 +53,13 @@ namespace Pumper {
         Status ForcePage(int32_t page_id = ALL_PAGES);
         Status MarkDirty(int32_t page_id);
         Status UnpinPage(int32_t page_id);
+
+        Status SetRootPage(int32_t page_id);
+        Status GetRootPage(int32_t &page_id);
     private:
+        // calculate the file header checksum
+        static uint16_t calculate_checksum(Header *hdr);
+
         // file discriptor for manipulation.
         bool is_file_opened;
         int32_t fd;
@@ -65,8 +70,6 @@ namespace Pumper {
         Header header_content;
         bool is_header_dirty;
 
-        // Future: locking in this layer
-        // uint16_t calculate_checksum();
     }; // PagedFile
 
 } // namespace Pumper

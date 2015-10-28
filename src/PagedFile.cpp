@@ -42,7 +42,7 @@ namespace Pumper {
 
         int32_t header_length;
 
-        // set_checksum(header);
+        // new_header.checksum = calculate_checksum(&new_header);
         lseek(new_fd, 0, SEEK_SET);
         header_length = write(new_fd, &new_header, SIZEOF_HEADER);
         ERROR_ASSERT(header_length == SIZEOF_HEADER);
@@ -73,31 +73,21 @@ namespace Pumper {
         header_length = read(fd, &header_content, SIZEOF_HEADER);
         ERROR_ASSERT(header_length == SIZEOF_HEADER);
         ERROR_ASSERT(!strncmp(header_content.magic, "PUMPER", 8));
-
+        // ERROR_ASSERT(calculate_checksum(&header_content) == 0xffff);
         is_file_opened = true;
         is_header_dirty = false;
         RETURN_SUCCESS();
     }
 
-    Status PagedFile::OpenMemory()
-    {
-        WARNING_ASSERT(!is_file_opened);
-        fd = MEMORY_FD;
-
-        RETURN_ERROR("OpenMemory: Not Implemented");
-
-        is_file_opened = true;
-        is_header_dirty = false;
-        RETURN_SUCCESS();        
-    }
-
     Status PagedFile::Close()
     {
         WARNING_ASSERT(is_file_opened);
-        Buffer::GetBuffer()->FlushPages(fd);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FlushPages(fd));
 
         if (is_header_dirty)
         {
+            header_content.checksum = 0;
+            // header_content.checksum = calculate_checksum(&header_content);
             int32_t header_length;
             lseek(fd, 0, SEEK_SET);
             header_length = write(fd, &header_content, SIZEOF_HEADER);
@@ -115,11 +105,12 @@ namespace Pumper {
     Status PagedFile::AllocatePage(int32_t &page_id)
     {
         int8_t * raw_page;
-
+        WARNING_ASSERT(is_file_opened);
         // if there is a free page, reuse it.
         if (header_content.free_list_head == INVALID_PAGE_ID)
         {
-            Buffer::GetBuffer()->FetchPage(fd, header_content.alloc_pages, &raw_page, false);
+            RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, header_content.alloc_pages, 
+                &raw_page, false));
             memset(raw_page, 0, PAGE_SIZE);
             page_id = header_content.alloc_pages;
             header_content.alloc_pages++;
@@ -127,24 +118,24 @@ namespace Pumper {
         else
         {
             page_id = header_content.free_list_head;
-            Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
+            RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page));
             // For those pages that have been freed, the first 4 bytes will be reserved
             // to the next of free page chain. If it's used, it will become useless.
             header_content.free_list_head = *(int32_t *) raw_page;            
         }
 
         is_header_dirty = true;
-        Buffer::GetBuffer()->UnpinPage(fd, page_id);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
         RETURN_SUCCESS();
     }
 
     Status PagedFile::ReleasePage(int32_t page_id)
     {
         int8_t * raw_page;
-
-        Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page);
+        WARNING_ASSERT(is_file_opened);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page));
          *(int32_t *) raw_page = header_content.free_list_head;
-        Buffer::GetBuffer()->UnpinPage(fd, page_id);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
         header_content.free_list_head = page_id;
 
         is_header_dirty = true;
@@ -154,27 +145,63 @@ namespace Pumper {
 
     Status PagedFile::FetchPage(int32_t page_id, int8_t** raw_page)
     {
+        WARNING_ASSERT(is_file_opened);
         //int8_t * raw_page;
-        Buffer::GetBuffer()->FetchPage(fd, page_id, raw_page);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, raw_page));
         // page.OpenPage(page_id, *raw_page);
         RETURN_SUCCESS();
     }
 
     Status PagedFile::MarkDirty(int32_t page_id)
     {
-        Buffer::GetBuffer()->MarkDirty(fd, page_id);
+        WARNING_ASSERT(is_file_opened);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->MarkDirty(fd, page_id));
         RETURN_SUCCESS();
     }
 
     Status PagedFile::UnpinPage(int32_t page_id)
     {
-        Buffer::GetBuffer()->UnpinPage(fd, page_id);
+        WARNING_ASSERT(is_file_opened);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
         RETURN_SUCCESS();
     }
 
     Status PagedFile::ForcePage(int32_t page_id)
     {
-        return Buffer::GetBuffer()->ForcePage(fd, page_id);
+        WARNING_ASSERT(is_file_opened);
+        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->ForcePage(fd, page_id));
+        RETURN_SUCCESS();
+    }
+
+    Status PagedFile::SetRootPage(int32_t page_id)
+    {
+        WARNING_ASSERT(is_file_opened);
+        header_content.first_page = page_id;
+        is_header_dirty = true;
+        RETURN_SUCCESS();
+    }
+
+    Status PagedFile::GetRootPage(int32_t &page_id)
+    {
+        WARNING_ASSERT(is_file_opened);
+        page_id = header_content.first_page;
+        RETURN_SUCCESS();
+    }
+
+    uint16_t PagedFile::calculate_checksum(Header *hdr)
+    {
+        uint16_t *reinterpret = (uint16_t *) hdr;
+        uint32_t sum = 0;
+        for (int i = 0; i < SIZEOF_HEADER / 2; i++)
+        {
+            sum += *reinterpret;
+            reinterpret++;
+        }
+        sum += (sum >> 16) + 1;
+        sum ^= 0xffff;
+        sum &= 0xffff;
+        printf("sum = %d\n", sum);
+        return (uint16_t) sum;        
     }
 
 } // namespace Pumper

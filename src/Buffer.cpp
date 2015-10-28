@@ -28,6 +28,7 @@ namespace Pumper {
 
             buffer_chain[i].mapping = new int8_t[PAGE_SIZE];
             ERROR_ASSERT(buffer_chain[i].mapping);
+            memset(buffer_chain[i].mapping, 0, PAGE_SIZE);
             buffer_chain[i].fd = INVALID_FD;
             buffer_chain[i].page_id = INVALID_PAGE_ID;
             buffer_chain[i].pin_count = 0;
@@ -40,6 +41,7 @@ namespace Pumper {
 
     Buffer::~Buffer()
     {
+        Clear();
         for (int i = 0; i < BUFFER_SIZE; i++)
         {
             if (buffer_chain[i].mapping)
@@ -101,7 +103,7 @@ namespace Pumper {
         }
 
         *page = buffer_chain[slot_id].mapping;
-        PrintDebugInfo();
+        // PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -115,7 +117,7 @@ namespace Pumper {
             RETHROW_ON_EXCEPTION(unlink_slot(slot_id));
             RETHROW_ON_EXCEPTION(enqueue_slot(slot_id));
         }
-        PrintDebugInfo();
+        // PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -127,7 +129,7 @@ namespace Pumper {
         buffer_chain[slot_id].is_dirty = true;
         RETHROW_ON_EXCEPTION(unlink_slot(slot_id));
         RETHROW_ON_EXCEPTION(enqueue_slot(slot_id));
-        PrintDebugInfo();
+        // PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -165,7 +167,7 @@ namespace Pumper {
 
             slot_id = next;
         }
-        PrintDebugInfo();
+        // PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -185,7 +187,7 @@ namespace Pumper {
 
             slot_id = next;
         }
-        PrintDebugInfo();
+        // PrintDebugInfo();
         RETURN_SUCCESS();
     }
 
@@ -304,7 +306,7 @@ namespace Pumper {
 
     Status Buffer::read_page(int32_t fd, int32_t page_id, int8_t* mapping)
     {
-        printf("Read operation: fd=%d, page=%d\n", fd, page_id);
+        // printf("Read operation: fd=%d, page=%d\n", fd, page_id);
         int32_t offset = PAGE_ZERO_OFFSET + PAGE_SIZE * page_id;
         WARNING_ASSERT(lseek(fd, offset, SEEK_SET));
         WARNING_ASSERT(read(fd, mapping, PAGE_SIZE) == PAGE_SIZE);
@@ -313,7 +315,7 @@ namespace Pumper {
 
     Status Buffer::write_page(int32_t fd, int32_t page_id, int8_t* mapping)
     {
-        printf("Write operation: fd=%d, page=%d\n", fd, page_id);
+        // printf("Write operation: fd=%d, page=%d\n", fd, page_id);
         int32_t offset = PAGE_ZERO_OFFSET + PAGE_SIZE * page_id;
         WARNING_ASSERT(lseek(fd, offset, SEEK_SET));
         WARNING_ASSERT(write(fd, mapping, PAGE_SIZE) == PAGE_SIZE);
