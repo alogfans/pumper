@@ -133,6 +133,7 @@ namespace Pumper {
     {
         int8_t * raw_page;
         WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page));
          *(int32_t *) raw_page = header_content.free_list_head;
         RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
@@ -146,6 +147,7 @@ namespace Pumper {
     Status PagedFile::FetchPage(int32_t page_id, int8_t** raw_page)
     {
         WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         //int8_t * raw_page;
         RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, raw_page));
         // page.OpenPage(page_id, *raw_page);
@@ -155,6 +157,7 @@ namespace Pumper {
     Status PagedFile::MarkDirty(int32_t page_id)
     {
         WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->MarkDirty(fd, page_id));
         RETURN_SUCCESS();
     }
@@ -162,6 +165,7 @@ namespace Pumper {
     Status PagedFile::UnpinPage(int32_t page_id)
     {
         WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
         RETURN_SUCCESS();
     }
@@ -169,6 +173,7 @@ namespace Pumper {
     Status PagedFile::ForcePage(int32_t page_id)
     {
         WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->ForcePage(fd, page_id));
         RETURN_SUCCESS();
     }
@@ -176,6 +181,7 @@ namespace Pumper {
     Status PagedFile::SetRootPage(int32_t page_id)
     {
         WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         header_content.first_page = page_id;
         is_header_dirty = true;
         RETURN_SUCCESS();
@@ -183,7 +189,7 @@ namespace Pumper {
 
     Status PagedFile::GetRootPage(int32_t &page_id)
     {
-        WARNING_ASSERT(is_file_opened);
+        WARNING_ASSERT(is_file_opened);        
         page_id = header_content.first_page;
         RETURN_SUCCESS();
     }

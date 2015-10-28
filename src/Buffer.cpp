@@ -41,7 +41,7 @@ namespace Pumper {
 
     Buffer::~Buffer()
     {
-        Clear();
+        Clear(true);
         for (int i = 0; i < BUFFER_SIZE; i++)
         {
             if (buffer_chain[i].mapping)
@@ -171,13 +171,13 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
-    Status Buffer::Clear()
+    Status Buffer::Clear(bool force)
     {
         int32_t slot_id = first;
         while (slot_id != INVALID_SLOT_ID)
         {
             int32_t next = buffer_chain[slot_id].next;
-            if (!buffer_chain[slot_id].pin_count)
+            if (force || !buffer_chain[slot_id].pin_count)
             {
                 RETHROW_ON_EXCEPTION(hash_table.Remove(buffer_chain[slot_id].fd, 
                     buffer_chain[slot_id].page_id));

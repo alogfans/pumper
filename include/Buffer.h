@@ -38,8 +38,9 @@ namespace Pumper {
         // Update all items that marked dirty to disk, and delete these items from buffer.
         Status FlushPages(int32_t fd);
 
-        // Clear all items, will flush all pages to disk.
-        Status Clear();
+        // Clear all items, will flush all pages to disk. By default pinned page will not cleared, 
+        // except when deconstructor called it
+        Status Clear(bool force = false);
 
         // Update all items that marked dirty to disk (or single page), but do not remove 
         // it from buffer.
