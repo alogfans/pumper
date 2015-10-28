@@ -160,9 +160,14 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
-    Status PagedFile::UnpinPage(int32_t page_id)
+    Status PagedFile::MarkDirty(int32_t page_id)
     {
         Buffer::GetBuffer()->MarkDirty(fd, page_id);
+        RETURN_SUCCESS();
+    }
+
+    Status PagedFile::UnpinPage(int32_t page_id)
+    {
         Buffer::GetBuffer()->UnpinPage(fd, page_id);
         RETURN_SUCCESS();
     }

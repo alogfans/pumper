@@ -52,6 +52,7 @@ namespace Pumper {
         // Fetch allocated page and do some operations by upper procedures.
         Status FetchPage(int32_t page_id, int8_t** page);
         Status ForcePage(int32_t page_id = ALL_PAGES);
+        Status MarkDirty(int32_t page_id);
         Status UnpinPage(int32_t page_id);
     private:
         // file discriptor for manipulation.
@@ -65,7 +66,7 @@ namespace Pumper {
         bool is_header_dirty;
 
         // Future: locking in this layer
-
+        // uint16_t calculate_checksum();
     }; // PagedFile
 
 } // namespace Pumper

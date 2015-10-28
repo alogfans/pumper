@@ -21,6 +21,7 @@ TEST(storage_test, basic)
     EXPECT_EQ(page_id, 1);
     pp.FetchPage(0, &ptr);
     strcpy(ptr, "Hello world\n");
+    pp.MarkDirty(0);
     pp.UnpinPage(0);
     pp.Close();
 }
