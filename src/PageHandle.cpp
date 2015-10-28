@@ -60,12 +60,11 @@ namespace Pumper {
         return *this;
     }
 
-    Status PageHandle::OpenPage(PagedFile *paged_file, int32_t page_id)
+    Status PageHandle::OpenPage(PagedFile &paged_file, int32_t page_id)
     {
-        WARNING_ASSERT(paged_file);
         WARNING_ASSERT(!is_file_opened);
-        this->paged_file = paged_file;
-        RETHROW_ON_EXCEPTION(paged_file->FetchPage(page_id, &buffer_image));
+        this->paged_file = &paged_file;
+        RETHROW_ON_EXCEPTION(this->paged_file->FetchPage(page_id, &buffer_image));
         WARNING_ASSERT(buffer_image);
         this->is_file_opened = true;
         this->page_id = page_id;
@@ -76,6 +75,7 @@ namespace Pumper {
     {
         WARNING_ASSERT(is_file_opened);        
         RETHROW_ON_EXCEPTION(paged_file->UnpinPage(page_id));
+        is_file_opened = false;
         RETURN_SUCCESS();
     }
 
@@ -94,7 +94,7 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
-    Status PageHandle::Write(int8_t *data, int32_t length, int32_t offset, bool need_force)
+    Status PageHandle::Write(const int8_t *data, int32_t length, int32_t offset, bool need_force)
     {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(data);

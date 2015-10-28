@@ -22,7 +22,7 @@ namespace Pumper {
         PageHandle();
         ~PageHandle();
 
-        Status OpenPage(PagedFile *paged_file, int32_t page_id);
+        Status OpenPage(PagedFile &paged_file, int32_t page_id);
         Status ClosePage();
 
         // Copy assignments and comparator
@@ -36,7 +36,7 @@ namespace Pumper {
         // Copying particular data to user. Will NOT modify the page content
         Status Read(int8_t *data, int32_t length, int32_t offset = 0);
         // Copying particular user data to page area. Will modify the page content.
-        Status Write(int8_t *data, int32_t length, int32_t offset = 0, bool need_force = false);
+        Status Write(const int8_t *data, int32_t length, int32_t offset = 0, bool need_force = false);
 
         // Misc.
         Status ForceUpdate();
