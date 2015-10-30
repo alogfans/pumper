@@ -10,8 +10,7 @@
 
 #include "Types.h"
 #include "Status.h"
-
-#include <memory>
+#include "Lock.h"
 
 namespace Pumper {
     // Forward declaration
@@ -49,6 +48,9 @@ namespace Pumper {
 
         // Buffer image of current page. Will managed by all EQUALLED instances
         int8_t *buffer_image;
+
+        // Mutex Lock to serialize read and write operation
+        MutexLock mutex;
     }; // PageHandle
 
 } // namespace Pumper

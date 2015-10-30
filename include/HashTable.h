@@ -10,6 +10,8 @@
 #include "Types.h"
 #include "Status.h"
 
+#include <memory>
+
 namespace Pumper {
     class HashTable: public noncopyable {
     public:

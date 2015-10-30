@@ -13,6 +13,7 @@
 
 #include "Types.h"
 #include "Status.h"
+#include "Lock.h"
 
 namespace Pumper {
     // The file header, comsuming the first 32 bytes of file

@@ -108,7 +108,7 @@ namespace Pumper {
             for (int i = 0; i < depth; ++i)
                 dump = dump + String(strings[i]) + "\n";
         }
-
+        free(strings);
         return dump;
     }
 

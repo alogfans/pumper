@@ -102,7 +102,7 @@ namespace Pumper {
 
         // TODO: Need locking when multiple PageHandles
         {
-            // RegionLock region_lock;
+            LockGuard lock_guard(mutex);
             memcpy(buffer_image + offset, data, length);
         }
 

@@ -41,7 +41,8 @@ TEST(storage_test, read)
         ph.ClosePage();
     }
     pp.Close();
-    // pp.Unlink("test.dat");
+    delete [] ptr;
+    pp.Unlink("test.dat");
 }
 
 int main(int argc, char *argv[])
