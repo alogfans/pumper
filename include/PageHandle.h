@@ -49,7 +49,7 @@ namespace Pumper {
         // Buffer image of current page. Will managed by all EQUALLED instances
         int8_t *buffer_image;
 
-        // Mutex Lock to serialize read and write operation
+        // Mutex Lock to serialize write operation to make consistency.
         MutexLock mutex;
     }; // PageHandle
 

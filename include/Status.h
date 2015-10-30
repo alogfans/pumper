@@ -1,15 +1,21 @@
 // Status.h
 // Part of PUMPER, copyright (C) 2015 Alogfans.
 //
-// Returned value management.
+// Returned value management. In error backtracing, I reuse the code so that
+// we can get the c++ style function information.
+// https://panthema.net/2008/0901-stacktrace-demangled/
+//
+// stacktrace.h (c) 2008, Timo Bingmann from http://idlebox.net/
+// published under the WTFPL v2.0
+//
 
 #ifndef __STATUS_H__
 #define __STATUS_H__
 
-#include <string>
+#include <stdio.h>
 #include <stdlib.h>
 #include <execinfo.h>
-#include <stdio.h>
+#include <cxxabi.h>
 
 #include "Types.h"
 
@@ -19,15 +25,15 @@
 } while(0);
 
 #define RETURN_WARNING(msg) do { \
-    String backtrace = dump_backtrace(msg); \
-    printf("%s(%s:%d) %s\n", __func__, __FILE__, __LINE__, backtrace.c_str()); \
-    return Status(Warning, backtrace); \
+    Status status = Status(Warning, msg); \
+    printf("%s\n  at function %s:%s() at line %d\n", msg, __FILE__, __func__, __LINE__); \
+    return status; \
 } while(0);
 
 #define RETURN_ERROR(msg) do { \
-    String backtrace = dump_backtrace(msg); \
-    Status status = Status(Error, backtrace); \
-    printf("%s(%s:%d) %s\n", __func__, __FILE__, __LINE__, backtrace.c_str()); \
+    Status status = Status(Error, msg); \
+    printf("%s\n  function: %s:%s()\n  line: %d\n", msg, __FILE__, __func__, __LINE__); \
+    print_stacktrace(); \
     exit(-1); \
 } while(0);
 
@@ -40,7 +46,7 @@
 } while(0);
 
 #define RETHROW_ON_EXCEPTION(cond) do { \
-    ::Pumper::Status status = (cond); \
+    Status status = (cond); \
     if (!(status == STATUS_SUCCESS)) \
         return status; \
 } while(0);
@@ -86,30 +92,80 @@ namespace Pumper {
     // new object again and again.
     const Status STATUS_SUCCESS = Status(Success, "");
     
-    // The dump function. Available in UNIX-like environment like Linux.
-    // Help programmers to find bug with GDB (GNU Debugger)
-    inline static String dump_backtrace(const String& message)
+    static inline void print_stacktrace(FILE *out = stderr, unsigned int max_frames = 63)
     {
-        const int MAX_DEPTH = 16;
-        void *buffer[MAX_DEPTH] = { 0 };
-        int depth;
-        char **strings;
-        String dump = "PANIC: " + message + "\nBacktrace(s) information:\n";
-        
-        depth = backtrace(buffer, MAX_DEPTH);
-        strings = backtrace_symbols(buffer, depth);
+        fprintf(out, "Stacktrace:\n");
 
-        if (strings == NULL)
-        {
-            dump = dump + "backtrace() error.\n";
+        // storage array for stack trace address data
+        void* addrlist[max_frames+1];
+
+        // retrieve current stack addresses
+        int addrlen = backtrace(addrlist, sizeof(addrlist) / sizeof(void*));
+
+        if (addrlen == 0) {
+            fprintf(out, "  <empty, possibly corrupt>\n");
+            return;
         }
-        else
+
+        // resolve addresses into strings containing "filename(function+address)",
+        // this array must be free()-ed
+        char** symbollist = backtrace_symbols(addrlist, addrlen);
+
+        // allocate string which will be filled with the demangled function name
+        size_t funcnamesize = 256;
+        char* funcname = (char*)malloc(funcnamesize);
+
+        // iterate over the returned symbol lines. skip the first, it is the
+        // address of this function.
+        for (int i = 1; i < addrlen; i++)
         {
-            for (int i = 0; i < depth; ++i)
-                dump = dump + String(strings[i]) + "\n";
+            char *begin_name = 0, *begin_offset = 0, *end_offset = 0;
+
+            // find parentheses and +address offset surrounding the mangled name:
+            // ./module(function+0x15c) [0x8048a6d]
+            for (char *p = symbollist[i]; *p; ++p)
+            {
+                if (*p == '(')
+                    begin_name = p;
+                else if (*p == '+')
+                    begin_offset = p;
+                else if (*p == ')' && begin_offset) {
+                    end_offset = p;
+                    break;
+                }
+            }
+
+            if (begin_name && begin_offset && end_offset && begin_name < begin_offset)
+            {
+                *begin_name++ = '\0';
+                *begin_offset++ = '\0';
+                *end_offset = '\0';
+
+                // mangled name is now in [begin_name, begin_offset) and caller
+                // offset in [begin_offset, end_offset). now apply
+                // __cxa_demangle():
+
+                int status;
+                char* ret = abi::__cxa_demangle(begin_name, funcname, &funcnamesize, &status);
+                if (status == 0) {
+                    funcname = ret; // use possibly realloc()-ed string
+                    fprintf(out, "  %s : %s+%s\n", symbollist[i], funcname, begin_offset);
+                }
+                else {
+                    // demangling failed. Output function name as a C function with
+                    // no arguments.
+                    fprintf(out, "  %s : %s()+%s\n", symbollist[i], begin_name, begin_offset);
+                }
+            }
+            else
+            {
+                // couldn't parse the line? print the whole line.
+                fprintf(out, "  %s\n", symbollist[i]);
+            }
         }
-        free(strings);
-        return dump;
+
+        free(funcname);
+        free(symbollist);
     }
 
 } // namespace Pumper
