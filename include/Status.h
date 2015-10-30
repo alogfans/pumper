@@ -109,8 +109,6 @@ namespace Pumper {
                 dump = dump + String(strings[i]) + "\n";
         }
 
-        free(strings);
-        // free(buffer);
         return dump;
     }
 

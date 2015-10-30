@@ -87,7 +87,7 @@ namespace Pumper {
 
         // TODO: Need locking when multiple PageHandles
         {
-            LockGuard region_lock(mutex);
+            // RegionLock region_lock;
             memcpy(data, buffer_image + offset, length);
         }
 
@@ -95,13 +95,14 @@ namespace Pumper {
     }
 
     Status PageHandle::Write(const int8_t *data, int32_t length, int32_t offset, bool need_force)
-    {        
+    {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(data);
         WARNING_ASSERT(length >= 0 && offset >= 0 && length + offset <= PAGE_SIZE);
 
+        // TODO: Need locking when multiple PageHandles
         {
-            LockGuard region_lock(mutex);
+            // RegionLock region_lock;
             memcpy(buffer_image + offset, data, length);
         }
 
