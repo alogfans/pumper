@@ -10,6 +10,7 @@
 
 #include "Types.h"
 #include "Status.h"
+#include "Thread.h"
 
 #include <memory>
 
@@ -43,12 +44,12 @@ namespace Pumper {
 
     private:
         bool is_file_opened;
-
         PagedFile *paged_file;
         int32_t page_id;
-
         // Buffer image of current page. Will managed by all EQUALLED instances
         int8_t *buffer_image;
+        // Access locking
+        MutexLock mutex;
     }; // PageHandle
 
 } // namespace Pumper

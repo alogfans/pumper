@@ -41,6 +41,7 @@ TEST(storage_test, read)
         ph.ClosePage();
     }
     pp.Close();
+    delete [] ptr;
     // pp.Unlink("test.dat");
 }
 
