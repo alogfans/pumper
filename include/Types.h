@@ -7,6 +7,7 @@
 #define __TYPES_H__
 
 #include <string>
+#include <functional>
 
 namespace Pumper {
     // Data Types
@@ -22,6 +23,7 @@ namespace Pumper {
     // define String type as std::string, so have ability to replace with my own string 
     // library.
     typedef std::string String;
+    typedef std::function<void ()> ThreadFunc;
 
     // Forbidden copy or assignment
     class noncopyable {
