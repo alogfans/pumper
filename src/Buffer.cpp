@@ -48,7 +48,8 @@ namespace Pumper {
                 delete[] buffer_chain[i].mapping;
         }
     }
-    
+
+    /*   
     // Singleton object
     Buffer* Buffer::instance = NULL;
     Buffer* Buffer::GetBuffer()
@@ -59,7 +60,8 @@ namespace Pumper {
         ERROR_ASSERT(instance);
         return instance;
     }
-
+    */
+    
     Status Buffer::FetchPage(int32_t fd, int32_t page_id, int8_t** page, bool read_physical_page, 
         bool allow_multiple_pins)
     {

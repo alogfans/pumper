@@ -4,6 +4,7 @@
 #include "PagedFile.h"
 #include "Status.h"
 #include "Buffer.h"
+#include "Singleton.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -82,7 +83,7 @@ namespace Pumper {
     Status PagedFile::Close()
     {
         WARNING_ASSERT(is_file_opened);
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FlushPages(fd));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().FlushPages(fd));
 
         if (is_header_dirty)
         {
@@ -109,7 +110,7 @@ namespace Pumper {
         // if there is a free page, reuse it.
         if (header_content.free_list_head == INVALID_PAGE_ID)
         {
-            RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, header_content.alloc_pages, 
+            RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().FetchPage(fd, header_content.alloc_pages, 
                 &raw_page, false));
             memset(raw_page, 0, PAGE_SIZE);
             page_id = header_content.alloc_pages;
@@ -118,14 +119,14 @@ namespace Pumper {
         else
         {
             page_id = header_content.free_list_head;
-            RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page));
+            RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().FetchPage(fd, page_id, &raw_page));
             // For those pages that have been freed, the first 4 bytes will be reserved
             // to the next of free page chain. If it's used, it will become useless.
             header_content.free_list_head = *(int32_t *) raw_page;            
         }
 
         is_header_dirty = true;
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().UnpinPage(fd, page_id));
         RETURN_SUCCESS();
     }
 
@@ -134,9 +135,9 @@ namespace Pumper {
         int8_t * raw_page;
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, &raw_page));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().FetchPage(fd, page_id, &raw_page));
          *(int32_t *) raw_page = header_content.free_list_head;
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().UnpinPage(fd, page_id));
         header_content.free_list_head = page_id;
 
         is_header_dirty = true;
@@ -149,7 +150,7 @@ namespace Pumper {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
         //int8_t * raw_page;
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->FetchPage(fd, page_id, raw_page));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().FetchPage(fd, page_id, raw_page));
         // page.OpenPage(page_id, *raw_page);
         RETURN_SUCCESS();
     }
@@ -158,7 +159,7 @@ namespace Pumper {
     {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->MarkDirty(fd, page_id));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().MarkDirty(fd, page_id));
         RETURN_SUCCESS();
     }
 
@@ -166,7 +167,7 @@ namespace Pumper {
     {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->UnpinPage(fd, page_id));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().UnpinPage(fd, page_id));
         RETURN_SUCCESS();
     }
 
@@ -174,7 +175,7 @@ namespace Pumper {
     {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
-        RETHROW_ON_EXCEPTION(Buffer::GetBuffer()->ForcePage(fd, page_id));
+        RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().ForcePage(fd, page_id));
         RETURN_SUCCESS();
     }
 

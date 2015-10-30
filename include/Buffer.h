@@ -16,10 +16,11 @@ namespace Pumper {
     class Buffer: public noncopyable {
         // Forward declarations
     public:
+        Buffer();
         ~Buffer();
 
         // Singleton interface. Will drop an instance, and constructor is forbidden outside it
-        static Buffer* GetBuffer();
+        // static Buffer* GetBuffer();
 
         // Fetch a existed page in a opened file discriptor, it will return RAW page shadow
         // in memory. The last param allows user to fetch a page more than once. But be caseful
@@ -49,9 +50,7 @@ namespace Pumper {
         // Print debugging information.
         Status PrintDebugInfo();
 
-    private:
-        // Note: this is singleton pattern!
-        Buffer();
+    private:       
         Status unlink_slot(int32_t slot_id);
         Status enqueue_slot(int32_t slot_id);
         Status enqueue_free(int32_t slot_id);
@@ -59,7 +58,7 @@ namespace Pumper {
         Status read_page(int32_t fd, int32_t page_id, int8_t* mapping);
         Status write_page(int32_t fd, int32_t page_id, int8_t* mapping);
         
-        static Buffer *instance;
+        // static Buffer *instance;
 
         struct BufferChain {
             int32_t prev, next;             // Previous and Next index of the chain
