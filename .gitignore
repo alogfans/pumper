@@ -2,4 +2,4 @@ build/
 .ycm_extra_conf.*
 gtest/
 *.dat
-
+*.log

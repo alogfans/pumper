@@ -128,15 +128,21 @@ namespace Pumper {
             int32_t fd;
 
             for (int32_t i = 0; i < nfds; i++) {
-                if (ready[i].events & EPOLLIN) {
-                    fd = ready[i].data.fd;
+                fd = ready[i].data.fd;
+
+                if (ready[i].events & EPOLLIN) 
+                {
                     if (callbacks[fd] && callbacks[fd]->Read)  
                         callbacks[fd]->Read(fd);
                 }
-                if (ready[i].events & EPOLLOUT) {
-                    int32_t fd = ready[i].data.fd;
+                else if (ready[i].events & EPOLLOUT) 
+                {
                     if (callbacks[fd] && callbacks[fd]->Write)
                         callbacks[fd]->Write(fd);
+                }
+                else
+                {
+                    printf("Unexpected Epoll: fd=%d, events=%d\n", fd, ready[i].events);
                 }
             }
         }
