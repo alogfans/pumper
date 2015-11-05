@@ -8,10 +8,27 @@
 #include "Status.h"
 #include "Thread.h"
 
+#include <string.h>
 #include <pthread.h>
 #include <functional>
 
 namespace Pumper {
+	namespace CurrentThread 
+	{
+		__thread char name[32] = "Main Thread";
+		__thread pthread_t thread_id = 0;
+
+		String Name()
+		{
+			return String(name);
+		}
+
+		pthread_t ThreadId()
+		{
+			return thread_id;
+		}
+	}
+
 	Thread::Thread(const ThreadFunc &func, const String &name) 
 		: is_started(false), is_joined(false), func(func), name(name), pthread_id(0)
 	{
@@ -63,7 +80,9 @@ namespace Pumper {
 			return NULL;
 
 		ThreadData * thread_data = (ThreadData *) native_thread_data;
-		// Really invoke user-defined function here
+		strncpy(CurrentThread::name, thread_data->name.c_str(), 32);
+		CurrentThread::thread_id = pthread_self();
+		// Really invoke user-defined function here		
 		thread_data->Invoke();
 		delete thread_data;
 		return NULL;

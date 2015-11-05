@@ -11,13 +11,16 @@ using namespace Pumper;
 
 void hello_world()
 {
-    cout << "Thread_Internal: Hello world!" << endl;
+    cout << "Thread_Internal: Hello world = " <<  CurrentThread::Name() << endl;
+    sleep(2);
 }
 
 TEST(thread_test, simple_condition)
 {
-    Thread thread(hello_world);
+    Thread thread(hello_world, "Hello world");
     thread.Start();
+    cout << "Outer: Hello world = " <<  CurrentThread::Name() << endl;
+    sleep(1);
     thread.Join();
 }
 

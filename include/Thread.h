@@ -13,9 +13,17 @@
 #include <functional>
 
 namespace Pumper {
+	namespace CurrentThread 
+	{
+		String Name();
+		pthread_t ThreadId();
+	}
+
+	typedef std::function<void ()> ThreadFunc;
+	
 	class Thread
 	{
-	public:
+	public:		
 		explicit Thread(const ThreadFunc &func, const String &name = String());
 		~Thread();
 
