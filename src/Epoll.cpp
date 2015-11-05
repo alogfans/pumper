@@ -135,14 +135,10 @@ namespace Pumper {
                     if (callbacks[fd] && callbacks[fd]->Read)  
                         callbacks[fd]->Read(fd);
                 }
-                else if (ready[i].events & EPOLLOUT) 
+                if (ready[i].events & EPOLLOUT) 
                 {
                     if (callbacks[fd] && callbacks[fd]->Write)
                         callbacks[fd]->Write(fd);
-                }
-                else
-                {
-                    printf("Unexpected Epoll: fd=%d, events=%d\n", fd, ready[i].events);
                 }
             }
         }
