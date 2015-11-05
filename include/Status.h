@@ -18,7 +18,7 @@
 #include <cxxabi.h>
 
 #include "Types.h"
-#include "Logger.h"
+#include "Singleton.h"
 
 // Use the following macros to return the status.
 #define RETURN_SUCCESS() do { \
@@ -54,6 +54,28 @@
 } while(0);
 
 namespace Pumper {
+
+    enum LogLevel {
+        Success = 0,
+        Warning = 1,
+        Error = 2
+    };
+
+    const int32_t LOG_ENTRY_LENGTH = 1024;
+    const int32_t STACK_TRACE_LENGTH = 65536;
+    const LogLevel ignored_level = LogLevel::Success;
+
+    class Logger
+    {
+    public:
+        Logger();
+        ~Logger();
+        void Append(LogLevel log_level, const String &message, bool with_stacktrace = false);
+
+    private:
+        void print_stacktrace(unsigned int max_frames = 63);        
+        int32_t log_fd;
+    };
 
     class Status {
     public:
