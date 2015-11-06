@@ -11,13 +11,13 @@
 #include <string.h>
 
 namespace Pumper {
-	Epoll::Epoll() : cond(mutex), pending_changes(false)
-	{
-		pollfd = epoll_create(MAX_EPOLL_FDS);
-		ERROR_ASSERT(pollfd >= 0);
+    Epoll::Epoll() : cond(mutex), pending_changes(false)
+    {
+        pollfd = epoll_create(MAX_EPOLL_FDS);
+        ERROR_ASSERT(pollfd >= 0);
         memset(&callbacks, 0, sizeof(callbacks));
         memset(&fd_status, 0, sizeof(fd_status));
-	}
+    }
 
     Epoll::~Epoll()
     {
@@ -26,8 +26,8 @@ namespace Pumper {
 
     Status Epoll::AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<CallbackFunc> callback_func)
     {
-    	WARNING_ASSERT(fd < MAX_EPOLL_FDS);
-    	LockGuard lock_guard(mutex);
+        WARNING_ASSERT(fd < MAX_EPOLL_FDS);
+        LockGuard lock_guard(mutex);
 
         struct epoll_event ev;
         int32_t mode;

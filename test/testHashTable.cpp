@@ -18,14 +18,14 @@ TEST(hashtable_test, simple_condition)
     EXPECT_EQ(slot_id, 5);
     EXPECT_EQ(hash_table.IsExisted(2, 1), false);
     hash_table.Remove(1, 2);
-	EXPECT_EQ(hash_table.IsExisted(1, 2), false);
+    EXPECT_EQ(hash_table.IsExisted(1, 2), false);
 }
 
 TEST(hashtable_test, random_condition)
 {
     HashTable hash_table(1);
     for (int i = 0; i < 10000; i++)
-    	hash_table.Insert(i, i, i);
+        hash_table.Insert(i, i, i);
     for (int i = 10000 - 1; i >= 0; i--) {
         if (i % 13 == 0) {
             Status status = hash_table.Remove(i, i);

@@ -8,7 +8,7 @@ using namespace Pumper;
 
 int main()
 {
-	char buffer[128] = { 0 };
+    char buffer[128] = { 0 };
 
     TcpClient client;
     client.Connect("127.0.0.1", 10086);

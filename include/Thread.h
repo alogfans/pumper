@@ -13,45 +13,45 @@
 #include <functional>
 
 namespace Pumper {
-	namespace CurrentThread 
-	{
-		String Name();
-		pthread_t ThreadId();
-	}
+    namespace CurrentThread 
+    {
+        String Name();
+        pthread_t ThreadId();
+    }
 
-	typedef std::function<void ()> ThreadFunc;
-	
-	class Thread
-	{
-	public:		
-		explicit Thread(const ThreadFunc &func, const String &name = String());
-		~Thread();
+    typedef std::function<void ()> ThreadFunc;
+    
+    class Thread
+    {
+    public:        
+        explicit Thread(const ThreadFunc &func, const String &name = String());
+        ~Thread();
 
-		Status Start();
-		int Join();
-		bool Started();
-		pthread_t ThreadId();
-		const String& Name();
+        Status Start();
+        int Join();
+        bool Started();
+        pthread_t ThreadId();
+        const String& Name();
 
-	private:
-		bool is_started;
-		bool is_joined;
-		ThreadFunc func;
-		String name;
-		pthread_t pthread_id;
-	};
+    private:
+        bool is_started;
+        bool is_joined;
+        ThreadFunc func;
+        String name;
+        pthread_t pthread_id;
+    };
 
-	// Use for Thread::Start(), because PTHRAED requires the following style of functions 
-	// for invoking.
-	void * pthread_stub(void * thread_data);
+    // Use for Thread::Start(), because PTHRAED requires the following style of functions 
+    // for invoking.
+    void * pthread_stub(void * thread_data);
 
-	struct ThreadData
-	{
-		ThreadData(const ThreadFunc &func, const String name) : func(func), name(name) { }
-		void Invoke();
-		ThreadFunc func;
-		String name;
-	};
+    struct ThreadData
+    {
+        ThreadData(const ThreadFunc &func, const String name) : func(func), name(name) { }
+        void Invoke();
+        ThreadFunc func;
+        String name;
+    };
 
 } // namespace Pumper
 

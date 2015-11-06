@@ -23,22 +23,22 @@
 #include <string.h>
 
 namespace Pumper {
-	// forward declarations
-	class TcpServer;
+    // forward declarations
+    class TcpServer;
 
-	enum ShutdownMode
-	{
-		Read = SHUT_RD,
-		Write = SHUT_WR,
-		ReadWrite = SHUT_RDWR
-	};
+    enum ShutdownMode
+    {
+        Read = SHUT_RD,
+        Write = SHUT_WR,
+        ReadWrite = SHUT_RDWR
+    };
 
-	class TcpClient : public noncopyable
-	{
-		friend class TcpServer;
-	public:
-		TcpClient();		
-		~TcpClient();
+    class TcpClient : public noncopyable
+    {
+        friend class TcpServer;
+    public:
+        TcpClient();        
+        ~TcpClient();
 
         Status Connect(const String &ip_address, int32_t port);
         Status Close();
@@ -52,31 +52,31 @@ namespace Pumper {
 
         int32_t GetSocketDescriptor();
         String GetAddressPort();
-	private:
-		int32_t fd;
-		struct sockaddr_in sockaddr;
-	};
+    private:
+        int32_t fd;
+        struct sockaddr_in sockaddr;
+    };
 
-	class TcpServer : public noncopyable
-	{
-	public:
-		TcpServer();
-		~TcpServer();
+    class TcpServer : public noncopyable
+    {
+    public:
+        TcpServer();
+        ~TcpServer();
 
-		Status Listen(int32_t port, int32_t backlog = 5);
-		Status Accept(TcpClient &tcp_client);
-		Status Close();
-		Status Shutdown(ShutdownMode howto);
+        Status Listen(int32_t port, int32_t backlog = 5);
+        Status Accept(TcpClient &tcp_client);
+        Status Close();
+        Status Shutdown(ShutdownMode howto);
 
-		Status SetNonBlocking(bool is_nonblocking = true);
+        Status SetNonBlocking(bool is_nonblocking = true);
         Status SetReuseAddress(bool is_reusable = true);
 
         int32_t GetSocketDescriptor();
         String GetAddressPort();
-	private:
-		int32_t fd;
-		struct sockaddr_in sockaddr;
-	};
+    private:
+        int32_t fd;
+        struct sockaddr_in sockaddr;
+    };
 
 } // namespace Pumper
 

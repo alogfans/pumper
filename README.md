@@ -10,18 +10,18 @@ To test the incompleted system, please use [Google Test](https://github.com/goog
 
 2. According to the description of gtest, compile the code as a static library. Then copy this archive (`libgtest.a`) and folder `include` to `gtest` directory of this project. As a result, the structure of directories may be similar to this:
 
-	```
-	pumper
-	-- build
-	-- gtest
-	   -- libgtest.a
-	   -- include
-	      -- gtest
-	         -- ...
-	-- include
-	-- src
-	-- test
-	```
+    ```
+    pumper
+    -- build
+    -- gtest
+       -- libgtest.a
+       -- include
+          -- gtest
+             -- ...
+    -- include
+    -- src
+    -- test
+    ```
 
 3. Create `build` folder, and execute `make` to compile ALL executives in `test` directory.
 
