@@ -64,7 +64,7 @@ namespace Pumper {
 
     int32_t TcpClient::ReceiveBytes(int8_t *buffer, int32_t length)
     {
-        if (fd >= 0)
+        if (fd < 0)
             return -1;
 
         int32_t nleft = length, nbytes = 0;
@@ -92,7 +92,7 @@ namespace Pumper {
 
     int32_t TcpClient::SendBytes(const int8_t *buffer, int32_t length)
     {
-        if (fd >= 0)
+        if (fd < 0)
             return -1;
 
         int32_t nleft = length, nbytes = 0;
