@@ -22,35 +22,6 @@ namespace Pumper {
             Close();
     }
 
-
-    TcpClient::TcpClient(const TcpClient &rhs) : fd(rhs.fd), sockaddr(rhs.sockaddr)
-    {
-    }
-
-    TcpClient::TcpClient(int32_t fd, struct sockaddr_in sockaddr) : fd(fd), sockaddr(sockaddr)
-    {
-    }
-
-    bool TcpClient::operator==(const TcpClient &rhs) const
-    {
-        return this->fd == rhs.fd;
-    }
-
-    TcpClient& TcpClient::operator=(const TcpClient &rhs)
-    {
-        if (*this == rhs)
-            return *this;
-
-        if (fd >= 0)
-            Close();
-
-        this->fd = rhs.fd;
-        this->sockaddr = rhs.sockaddr;
-
-        return *this;
-    }
-
-
     Status TcpClient::Connect(const String &ip_address, int32_t port)
     {
         WARNING_ASSERT(fd < 0);
@@ -77,6 +48,19 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    Status TcpClient::Shutdown(ShutdownMode howto)
+    {
+        WARNING_ASSERT(fd >= 0);
+        WARNING_ASSERT(!shutdown(fd, (int32_t) howto));
+        
+        if (howto == ShutdownMode::ReadWrite)
+        {
+            fd = -1;
+            memset(&sockaddr, 0, sizeof(struct sockaddr_in));
+        }
+
+        RETURN_SUCCESS();
+    }
 
     int32_t TcpClient::ReceiveBytes(int8_t *buffer, int32_t length)
     {
@@ -157,6 +141,19 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    int32_t TcpClient::GetSocketDescriptor()
+    {
+        return fd;
+    }
+
+    String TcpClient::GetAddressPort()
+    {
+        char buffer[128] = { 0 };
+        if (fd < 0)
+            return String(buffer);
+        sprintf(buffer, "%s:%d", inet_ntoa(sockaddr.sin_addr), sockaddr.sin_port);
+        return String(buffer);
+    }
 
     TcpServer::TcpServer() : fd(-1)
     {
@@ -211,6 +208,20 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    Status TcpServer::Shutdown(ShutdownMode howto)
+    {
+        WARNING_ASSERT(fd >= 0);
+        WARNING_ASSERT(!shutdown(fd, (int32_t) howto));
+        
+        if (howto == ShutdownMode::ReadWrite)
+        {
+            fd = -1;
+            memset(&sockaddr, 0, sizeof(struct sockaddr_in));
+        }
+
+        RETURN_SUCCESS();
+    }
+
     Status TcpServer::SetNonBlocking(bool is_nonblocking)
     {
         WARNING_ASSERT(fd >= 0);
@@ -232,6 +243,19 @@ namespace Pumper {
         WARNING_ASSERT(!setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &mode, sizeof(int32_t)));
         RETURN_SUCCESS();
     }
+    
+    int32_t TcpServer::GetSocketDescriptor()
+    {
+        return fd;
+    }
 
+    String TcpServer::GetAddressPort()
+    {
+        char buffer[128] = { 0 };
+        if (fd < 0)
+            return String(buffer);
+        sprintf(buffer, "%s:%d", inet_ntoa(sockaddr.sin_addr), sockaddr.sin_port);
+        return String(buffer);
+    }
 
 } // namespace Pumper

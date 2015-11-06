@@ -26,32 +26,38 @@ namespace Pumper {
 	// forward declarations
 	class TcpServer;
 
-	class TcpClient
+	enum ShutdownMode
+	{
+		Read = SHUT_RD,
+		Write = SHUT_WR,
+		ReadWrite = SHUT_RDWR
+	};
+
+	class TcpClient : public noncopyable
 	{
 		friend class TcpServer;
 	public:
 		TcpClient();		
 		~TcpClient();
 
-		TcpClient(const TcpClient &rhs);
-		TcpClient(int32_t fd, struct sockaddr_in sockaddr);
-		bool operator==(const TcpClient &rhs) const;
-        TcpClient& operator=(const TcpClient &rhs);
-
         Status Connect(const String &ip_address, int32_t port);
         Status Close();
+        Status Shutdown(ShutdownMode howto);
 
         int32_t ReceiveBytes(int8_t *buffer, int32_t length);
         int32_t SendBytes(const int8_t *buffer, int32_t length);
 
         Status SetNonBlocking(bool is_nonblocking = true);
         Status SetReuseAddress(bool is_reusable = true);
+
+        int32_t GetSocketDescriptor();
+        String GetAddressPort();
 	private:
 		int32_t fd;
 		struct sockaddr_in sockaddr;
 	};
 
-	class TcpServer
+	class TcpServer : public noncopyable
 	{
 	public:
 		TcpServer();
@@ -60,12 +66,16 @@ namespace Pumper {
 		Status Listen(int32_t port, int32_t backlog = 5);
 		Status Accept(TcpClient &tcp_client);
 		Status Close();
+		Status Shutdown(ShutdownMode howto);
 
 		Status SetNonBlocking(bool is_nonblocking = true);
         Status SetReuseAddress(bool is_reusable = true);
+
+        int32_t GetSocketDescriptor();
+        String GetAddressPort();
 	private:
 		int32_t fd;
-		struct sockaddr_in sockaddr;		
+		struct sockaddr_in sockaddr;
 	};
 
 } // namespace Pumper
