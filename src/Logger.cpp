@@ -45,7 +45,7 @@ namespace Pumper
 
         sprintf(buffer, "%s", ctime(&time_stamp));
         buffer[strlen(buffer) - 1] = '\0';      // suppress \n
-        sprintf(buffer, "%s: [%s] %s\n", buffer, level_format, message.c_str());
+        sprintf(buffer, "%s: [%s] %s", buffer, level_format, message.c_str());
         write(log_fd, buffer, strlen(buffer));
 
         fprintf(stderr, "%s", buffer);

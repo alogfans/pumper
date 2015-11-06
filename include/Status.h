@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <execinfo.h>
 #include <cxxabi.h>
+#include <errno.h>
+#include <string.h>
 
 #include "Types.h"
 #include "Singleton.h"
@@ -28,6 +30,7 @@
 #define RETURN_WARNING(msg) do { \
     char buffer[256]; \
     sprintf(buffer, "%s\n  at function %s:%s() at line %d", msg, __FILE__, __func__, __LINE__); \
+    sprintf(buffer, "%s\n  errno: %d[%s]\n", buffer, errno, strerror(errno)); \
     Status status = Status(Error, buffer); \
     return status; \
 } while(0);
@@ -35,6 +38,7 @@
 #define RETURN_ERROR(msg) do { \
     char buffer[256]; \
     sprintf(buffer, "%s\n  at function %s:%s() at line %d", msg, __FILE__, __func__, __LINE__); \
+    sprintf(buffer, "%s\n  errno: %d[%s]\n", buffer, errno, strerror(errno)); \
     Status status = Status(Error, buffer); \
     exit(-1); \
 } while(0);
