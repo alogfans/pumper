@@ -10,12 +10,13 @@ int main()
 {
     char buffer[] = "Hello world";
 
-    TcpServer server;
+    Socket server;
+    server.SetReuseAddress();
     server.Listen(10086);
 
     while (true)
     {
-        TcpClient client;
+        Socket client;        
         server.Accept(client);
         client.SendBytes(buffer, sizeof(buffer));
         printf("Handled request from %s\n", client.GetAddressPort().c_str());

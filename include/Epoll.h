@@ -21,22 +21,21 @@
 namespace Pumper {
 
     typedef enum {
-        CB_NONE = 0x0,
-        CB_RDONLY = 0x1,
-        CB_WRONLY = 0x10,
-        CB_RDWR = 0x11,
-        CB_MASK = ~0x11,
+        None = 0x0,
+        ReadOnly = 0x1,
+        WriteOnly = 0x10,
+        ReadWrite = 0x11,
+        MaskFlag = ~0x11,
     } PollFlag;
 
-    struct CallbackFunc
-    {
-        typedef std::function<void(int32_t)> StubProc;
-
-        StubProc Read;
-        StubProc Write;
+    class ICallback
+    {   
+    public:     
+        virtual Status Read(int fd) = 0;
+        virtual Status Write(int fd) = 0;
     };
 
-    const int32_t MAX_EPOLL_FDS = 10240;
+    const int32_t MAX_EPOLL_FDS = 1024;
 
     // Poll manager. Should be singleton with Singleton<> wrapper class.
     class Epoll
@@ -46,7 +45,7 @@ namespace Pumper {
         ~Epoll();
 
         // Create or add epoll properties (fds and operations that detected)
-        Status AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<CallbackFunc> callback_func);
+        Status AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func);
 
         // Remove flags for fd (may be partial, e.g. listen to READ event instead of READ and WRITE event)
         Status RemoveCallback(int32_t fd, PollFlag flag);
@@ -56,7 +55,7 @@ namespace Pumper {
         Status PurgeCallbacks(int32_t fd);
 
         // Determine whether this call back existed in epoll system
-        bool ExistCallback(int32_t fd, PollFlag flag, const std::shared_ptr<CallbackFunc> callback_func);
+        bool ExistCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func);
 
         // Start iteration. Requires to run in a seperate thread!
         Status StartIteration();
@@ -69,7 +68,7 @@ namespace Pumper {
         int32_t pollfd;                 // epoll object handler
         struct epoll_event ready[MAX_EPOLL_FDS];
         int32_t fd_status[MAX_EPOLL_FDS];
-        std::shared_ptr<CallbackFunc> callbacks[MAX_EPOLL_FDS];
+        std::shared_ptr<ICallback> callbacks[MAX_EPOLL_FDS];
     };
 } // namespace Pumper
 

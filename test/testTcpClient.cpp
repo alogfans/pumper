@@ -10,10 +10,11 @@ int main()
 {
     char buffer[128] = { 0 };
 
-    TcpClient client;
+    Socket client;
     client.Connect("127.0.0.1", 10086);
     client.ReceiveBytes(buffer, 128);
     printf("Received: %s from %s\n", buffer, client.GetAddressPort().c_str());
     client.Close();
+    
     return 0;
 }

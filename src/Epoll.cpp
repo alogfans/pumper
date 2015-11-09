@@ -24,7 +24,7 @@ namespace Pumper {
         // Only at exit!
     }
 
-    Status Epoll::AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<CallbackFunc> callback_func)
+    Status Epoll::AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func)
     {
         WARNING_ASSERT(fd < MAX_EPOLL_FDS);
         LockGuard lock_guard(mutex);
@@ -41,9 +41,9 @@ namespace Pumper {
 
         ev.events = EPOLLET;
         ev.data.fd = fd;
-        if (fd_status[fd] & CB_RDONLY)
+        if (fd_status[fd] & ReadOnly)
             ev.events |= EPOLLIN;
-        if (fd_status[fd] & CB_WRONLY)
+        if (fd_status[fd] & WriteOnly)
             ev.events |= EPOLLOUT;
 
         WARNING_ASSERT(!epoll_ctl(pollfd, mode, fd, &ev));
@@ -71,9 +71,9 @@ namespace Pumper {
         ev.events = EPOLLET;
         ev.data.fd = fd;
 
-        if (fd_status[fd] & CB_RDONLY)
+        if (fd_status[fd] & ReadOnly)
             ev.events |= EPOLLIN;
-        if (fd_status[fd] & CB_WRONLY)
+        if (fd_status[fd] & WriteOnly)
             ev.events |= EPOLLOUT;
 
         WARNING_ASSERT(!epoll_ctl(pollfd, mode, fd, &ev));
@@ -103,12 +103,12 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
-    bool Epoll::ExistCallback(int32_t fd, PollFlag flag, const std::shared_ptr<CallbackFunc> callback_func)
+    bool Epoll::ExistCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func)
     {
         LockGuard lock_guard(mutex);
         if (!callbacks[fd] || callbacks[fd] != callback_func)
             return false;
-        return (fd_status[fd] & CB_MASK) == flag;
+        return (fd_status[fd] & MaskFlag) == flag;
     }
 
     Status Epoll::StartIteration()
@@ -130,16 +130,10 @@ namespace Pumper {
             for (int32_t i = 0; i < nfds; i++) {
                 fd = ready[i].data.fd;
 
-                if (ready[i].events & EPOLLIN) 
-                {
-                    if (callbacks[fd] && callbacks[fd]->Read)  
-                        callbacks[fd]->Read(fd);
-                }
-                if (ready[i].events & EPOLLOUT) 
-                {
-                    if (callbacks[fd] && callbacks[fd]->Write)
-                        callbacks[fd]->Write(fd);
-                }
+                if (callbacks[fd] && ready[i].events & EPOLLIN) 
+                    callbacks[fd]->Read(fd);
+                if (callbacks[fd] && ready[i].events & EPOLLOUT) 
+                    callbacks[fd]->Write(fd);
             }
         }
 

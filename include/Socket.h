@@ -33,12 +33,11 @@ namespace Pumper {
         ReadWrite = SHUT_RDWR
     };
 
-    class TcpClient : public noncopyable
+    class Socket : public noncopyable
     {
-        friend class TcpServer;
     public:
-        TcpClient();        
-        ~TcpClient();
+        Socket();        
+        ~Socket();
 
         Status Connect(const String &ip_address, int32_t port);
         Status Close();
@@ -47,32 +46,15 @@ namespace Pumper {
         int32_t ReceiveBytes(int8_t *buffer, int32_t length);
         int32_t SendBytes(const int8_t *buffer, int32_t length);
 
-        Status SetNonBlocking(bool is_nonblocking = true);
-        Status SetReuseAddress(bool is_reusable = true);
-
-        int32_t GetSocketDescriptor();
-        String GetAddressPort();
-    private:
-        int32_t fd;
-        struct sockaddr_in sockaddr;
-    };
-
-    class TcpServer : public noncopyable
-    {
-    public:
-        TcpServer();
-        ~TcpServer();
-
         Status Listen(int32_t port, int32_t backlog = 5);
-        Status Accept(TcpClient &tcp_client);
-        Status Close();
-        Status Shutdown(ShutdownMode howto);
+        Status Accept(Socket &tcp_client);
 
         Status SetNonBlocking(bool is_nonblocking = true);
         Status SetReuseAddress(bool is_reusable = true);
 
         int32_t GetSocketDescriptor();
         String GetAddressPort();
+
     private:
         int32_t fd;
         struct sockaddr_in sockaddr;
