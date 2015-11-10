@@ -19,6 +19,8 @@ namespace Pumper {
         pthread_t ThreadId();
     }
 
+    // If you want to use class methods, attach std::bind(). e.g.
+    // ThreadFunc func = std::bind(&Sample::HelloWorld, this, _1, _2);
     typedef std::function<void ()> ThreadFunc;
     
     class Thread
