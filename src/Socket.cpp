@@ -50,7 +50,7 @@ namespace Pumper {
         WARNING_ASSERT(fd >= 0);
         WARNING_ASSERT(!shutdown(fd, (int32_t) howto));
         
-        if (howto == ShutdownMode::ReadWrite)
+        if (howto == ShutdownReadWrite)
         {
             fd = -1;
             memset(&sockaddr, 0, sizeof(struct sockaddr_in));

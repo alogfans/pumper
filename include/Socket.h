@@ -23,14 +23,11 @@
 #include <string.h>
 
 namespace Pumper {
-    // forward declarations
-    class TcpServer;
-
     enum ShutdownMode
     {
-        Read = SHUT_RD,
-        Write = SHUT_WR,
-        ReadWrite = SHUT_RDWR
+        ShutdownRead = SHUT_RD,
+        ShutdownWrite = SHUT_WR,
+        ShutdownReadWrite = SHUT_RDWR
     };
 
     class Socket : public noncopyable

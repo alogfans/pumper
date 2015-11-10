@@ -13,6 +13,7 @@
 #include "Status.h"
 #include "Lock.h"
 #include "Thread.h"
+#include "EventHandler.h"
 
 #include <functional>
 #include <memory>
@@ -21,20 +22,14 @@
 namespace Pumper {
 
     typedef enum {
-        None = 0x0,
-        ReadOnly = 0x1,
-        WriteOnly = 0x10,
-        ReadWrite = 0x11,
-        MaskFlag = ~0x11,
+        PollNone = 0x0,
+        PollRead = 0x1,
+        PollWrite = 0x10,
+        PollReadWrite = 0x11,
+        PollMaskFlag = ~0x11,
     } PollFlag;
 
-    class ICallback
-    {   
-    public:     
-        virtual Status Read(int fd) = 0;
-        virtual Status Write(int fd) = 0;
-    };
-
+    class Socket;    
     const int32_t MAX_EPOLL_FDS = 1024;
 
     // Poll manager. Should be singleton with Singleton<> wrapper class.
@@ -45,20 +40,17 @@ namespace Pumper {
         ~Epoll();
 
         // Create or add epoll properties (fds and operations that detected)
-        Status AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func);
+        Status AddCallback(std::shared_ptr<Socket> socket, PollFlag flag, EventHandler callback_func);
 
         // Remove flags for fd (may be partial, e.g. listen to READ event instead of READ and WRITE event)
-        Status RemoveCallback(int32_t fd, PollFlag flag);
+        Status RemoveCallback(std::shared_ptr<Socket> socket, PollFlag flag);
 
         // Remove all callbacks of file descriptor fd, and it will block until the iteration ensures that
         // the fd will not be handled anymore
-        Status PurgeCallbacks(int32_t fd);
-
-        // Determine whether this call back existed in epoll system
-        bool ExistCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func);
+        Status PurgeCallbacks(std::shared_ptr<Socket> socket);
 
         // Start iteration. Requires to run in a seperate thread!
-        Status StartIteration();
+        void Loop();
     private:
         MutexLock mutex;
         Condition cond;
@@ -68,7 +60,8 @@ namespace Pumper {
         int32_t pollfd;                 // epoll object handler
         struct epoll_event ready[MAX_EPOLL_FDS];
         int32_t fd_status[MAX_EPOLL_FDS];
-        std::shared_ptr<ICallback> callbacks[MAX_EPOLL_FDS];
+        EventHandler callback_list[MAX_EPOLL_FDS];
+        std::shared_ptr<Socket> socket_list[MAX_EPOLL_FDS];
     };
 } // namespace Pumper
 

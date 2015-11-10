@@ -8,6 +8,7 @@
 // and call the corresponding user-defined functions
 
 #include "Epoll.h"
+#include "Socket.h"
 #include <string.h>
 
 namespace Pumper {
@@ -15,7 +16,7 @@ namespace Pumper {
     {
         pollfd = epoll_create(MAX_EPOLL_FDS);
         ERROR_ASSERT(pollfd >= 0);
-        memset(&callbacks, 0, sizeof(callbacks));
+        memset(&callback_list, 0, sizeof(callback_list));
         memset(&fd_status, 0, sizeof(fd_status));
     }
 
@@ -24,8 +25,11 @@ namespace Pumper {
         // Only at exit!
     }
 
-    Status Epoll::AddCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func)
+    Status Epoll::AddCallback(std::shared_ptr<Socket> socket, PollFlag flag, 
+        EventHandler callback_func)
     {
+        int32_t fd = socket->GetSocketDescriptor();
+        socket_list[fd] = socket;
         WARNING_ASSERT(fd < MAX_EPOLL_FDS);
         LockGuard lock_guard(mutex);
 
@@ -41,55 +45,56 @@ namespace Pumper {
 
         ev.events = EPOLLET;
         ev.data.fd = fd;
-        if (fd_status[fd] & ReadOnly)
+        if (fd_status[fd] & PollRead)
             ev.events |= EPOLLIN;
-        if (fd_status[fd] & WriteOnly)
+        if (fd_status[fd] & PollWrite)
             ev.events |= EPOLLOUT;
 
         WARNING_ASSERT(!epoll_ctl(pollfd, mode, fd, &ev));
 
-        WARNING_ASSERT(!callbacks[fd] || callbacks[fd] == callback_func);
-        callbacks[fd] = callback_func;
+        callback_list[fd] = callback_func;
 
         RETURN_SUCCESS();
     }
 
-    Status Epoll::RemoveCallback(int32_t fd, PollFlag flag)
+    Status Epoll::RemoveCallback(std::shared_ptr<Socket> socket, PollFlag flag)
     {
         LockGuard lock_guard(mutex);
 
+        int32_t fd = socket->GetSocketDescriptor();
         fd_status[fd] &= ~(int32_t) flag;
 
         struct epoll_event ev;
         int32_t mode;
 
         if (fd_status[fd])
-            mode = EPOLL_CTL_MOD;       // existed fd for triggering
+            mode = EPOLL_CTL_MOD;                       // existed fd for triggering
         else
             mode = EPOLL_CTL_DEL;        
 
         ev.events = EPOLLET;
         ev.data.fd = fd;
 
-        if (fd_status[fd] & ReadOnly)
+        if (fd_status[fd] & PollRead)
             ev.events |= EPOLLIN;
-        if (fd_status[fd] & WriteOnly)
+        if (fd_status[fd] & PollWrite)
             ev.events |= EPOLLOUT;
 
         WARNING_ASSERT(!epoll_ctl(pollfd, mode, fd, &ev));
 
         if (mode == EPOLL_CTL_DEL) 
-            callbacks[fd] = NULL;
+            callback_list[fd] = EventHandler();         // Default value
 
         RETURN_SUCCESS();
     }
 
-    // remove all callbacks related to fd
-    // the return guarantees that callbacks related to fd will never be called again
-    Status Epoll::PurgeCallbacks(int32_t fd)
+    // remove all callback_list related to fd
+    // the return guarantees that callback_list related to fd will never be called again
+    Status Epoll::PurgeCallbacks(std::shared_ptr<Socket> socket)
     {
         LockGuard lock_guard(mutex);
 
+        int32_t fd = socket->GetSocketDescriptor();
         struct epoll_event ev;
 
         ev.events = EPOLLET;
@@ -99,19 +104,11 @@ namespace Pumper {
 
         pending_changes = true;
         cond.Wait();
-        callbacks[fd] = NULL;
+        callback_list[fd] = EventHandler();
         RETURN_SUCCESS();
     }
 
-    bool Epoll::ExistCallback(int32_t fd, PollFlag flag, const std::shared_ptr<ICallback> callback_func)
-    {
-        LockGuard lock_guard(mutex);
-        if (!callbacks[fd] || callbacks[fd] != callback_func)
-            return false;
-        return (fd_status[fd] & MaskFlag) == flag;
-    }
-
-    Status Epoll::StartIteration()
+    void Epoll::Loop()
     {
         while (true)
         {
@@ -130,14 +127,14 @@ namespace Pumper {
             for (int32_t i = 0; i < nfds; i++) {
                 fd = ready[i].data.fd;
 
-                if (callbacks[fd] && ready[i].events & EPOLLIN) 
-                    callbacks[fd]->Read(fd);
-                if (callbacks[fd] && ready[i].events & EPOLLOUT) 
-                    callbacks[fd]->Write(fd);
+                if (ready[i].events & EPOLLIN) 
+                    callback_list[fd].onRead(socket_list[fd]);
+                if (ready[i].events & EPOLLOUT) 
+                    callback_list[fd].onWrite(socket_list[fd]);
+                if (ready[i].events & (EPOLLRDHUP | EPOLLERR))
+                    callback_list[fd].onClose(socket_list[fd]);
             }
         }
-
-        RETURN_SUCCESS();
     }
 
 } // namespace Pumper
