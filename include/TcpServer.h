@@ -28,7 +28,7 @@ namespace Pumper {
         Status Start(int32_t port, ReadCallback read_callback);
 
         // The following methods will be used by Epoll.h
-        void CreateConnection(std::shared_ptr<Socket> socket, int32_t howmany = 1);
+        void CreateConnection(std::shared_ptr<Socket> socket);
         void RemoveConnection(std::shared_ptr<Socket> socket);
 
     private:

@@ -29,6 +29,7 @@ namespace Pumper {
         EventHandler callback_func)
     {
         int32_t fd = socket->GetSocketDescriptor();
+        // printf("Trigger fd = %x\n", flag);
         socket_list[fd] = socket;
         WARNING_ASSERT(fd < MAX_EPOLL_FDS);
         LockGuard lock_guard(mutex);
@@ -43,7 +44,7 @@ namespace Pumper {
 
         fd_status[fd] |= (int32_t) flag;
 
-        ev.events = EPOLLET;
+        ev.events = 0;
         ev.data.fd = fd;
         if (fd_status[fd] & PollRead)
             ev.events |= EPOLLIN;
@@ -72,7 +73,7 @@ namespace Pumper {
         else
             mode = EPOLL_CTL_DEL;        
 
-        ev.events = EPOLLET;
+        ev.events = 0;
         ev.data.fd = fd;
 
         if (fd_status[fd] & PollRead)
@@ -126,7 +127,7 @@ namespace Pumper {
 
             for (int32_t i = 0; i < nfds; i++) {
                 fd = ready[i].data.fd;
-
+                // printf("Register event\n");
                 if (ready[i].events & EPOLLIN) 
                     callback_list[fd].onRead(socket_list[fd]);
                 if (ready[i].events & EPOLLOUT) 

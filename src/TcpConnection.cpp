@@ -6,6 +6,7 @@
 
 #include "TcpConnection.h"
 #include "TcpServer.h"
+#include "Socket.h"
 #include "Singleton.h"
 #include "Epoll.h"
 
@@ -17,7 +18,7 @@ namespace Pumper {
         EventHandler callback_func;
         callback_func.onRead = std::bind(&TcpConnection::onRead, this, std::placeholders::_1);
         callback_func.onClose = std::bind(&TcpConnection::onClose, this, std::placeholders::_1);
-        Singleton<Epoll>::Instance().AddCallback(client, PollReadWrite, callback_func);
+        Singleton<Epoll>::Instance().AddCallback(client, PollRead, callback_func);
     }
 
     TcpConnection::~TcpConnection()
@@ -27,13 +28,20 @@ namespace Pumper {
 
     void TcpConnection::onRead(std::shared_ptr<Socket> socket)
     {
-        int nbytes = 100;
-        std::string received_buffer, sent_buffer;
-        received_buffer.resize(nbytes);
-        socket->ReceiveBytes(&received_buffer.front(), nbytes);
+        char internal_buffer[128] = { 0 };
+        
+        int length = socket->ReceiveBytes(internal_buffer, 128);
+        if (length == 0)
+            return;
+
+        std::string received_buffer(internal_buffer);
+        std::string sent_buffer;
         if (read_callback)
             sent_buffer = read_callback(*this, received_buffer);
-        socket->SendBytes(&sent_buffer.front(), sent_buffer.size());
+
+        memset(internal_buffer, 0, 128);
+        strcpy(internal_buffer, sent_buffer.c_str());
+        socket->SendBytes(internal_buffer, 128);
     }
 
     void TcpConnection::onClose(std::shared_ptr<Socket> socket)
@@ -43,6 +51,18 @@ namespace Pumper {
         // Destory the socket
         socket.reset();
     }
+
+    std::string TcpConnection::ToString() const
+    {
+        return client->GetAddressPort();
+    }
+
+    void TcpConnection::Write(const std::string &data)
+    {
+        char internal_buffer[128] = { 0 };
+        strcpy(internal_buffer, data.c_str());
+        client->SendBytes(internal_buffer, 128);
+    }    
 
 } // namespace Pumper
 

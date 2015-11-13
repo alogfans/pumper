@@ -25,6 +25,8 @@ namespace Pumper {
         TcpConnection(std::shared_ptr<Socket> client, ReadCallback read_callback, TcpServer *tcp_server);
         ~TcpConnection();
 
+        std::string ToString() const;
+        void Write(const std::string &data);
     private:
         void onRead(std::shared_ptr<Socket> socket);
         void onClose(std::shared_ptr<Socket> socket);
