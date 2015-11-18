@@ -16,7 +16,7 @@ TEST(storage_test, basic)
     pp.Create("test.dat");
     pp.OpenFile("test.dat");
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 10000; i++)
     {
         int32_t page_id;
         pp.AllocatePage(page_id);
@@ -33,7 +33,7 @@ TEST(storage_test, read)
     PageHandle ph;
     char *ptr = new char[13];
     pp.OpenFile("test.dat");
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 10000; i++)
     {
         ph.OpenPage(pp, i);
         ph.Read(ptr, 13);

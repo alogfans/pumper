@@ -204,11 +204,9 @@ namespace Pumper {
             sum += *reinterpret;
             reinterpret++;
         }
-        sum += (sum >> 16) + 1;
-        sum ^= 0xffff;
-        sum &= 0xffff;
-        printf("sum = %d\n", sum);
-        return (uint16_t) sum;        
+        while (sum >> 16)
+            sum = (sum & 0xffff) + (sum >> 16);
+        return (uint16_t) ~sum;        
     }
 
 } // namespace Pumper
