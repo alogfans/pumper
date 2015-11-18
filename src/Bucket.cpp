@@ -36,14 +36,24 @@ namespace Pumper {
     bool Bucket::TryPut(const String &key, const String &value)
     {
         int16_t count_entry_ptr = ((BucketHeader *) payload)->count_entry_ptr;
+
+        int8_t rollback[PAGE_SIZE];
+        memcpy(rollback, payload, PAGE_SIZE);
+
         for (int16_t i = 0; i < count_entry_ptr; i++) 
         {
             EntryPtr * entry = get_entry_ptr(i); 
             String ref_key = get_key(entry->key_slice);
+            String ref_value = get_key(entry->value_slice);
             if (strcmp(key.c_str(), ref_key.c_str()) == 0)
             {
                 remove_key(entry->value_slice);
-                set_key(entry->value_slice, value);
+                if (set_key(entry->value_slice, value) < 0)
+                {
+                    memcpy(payload, rollback, PAGE_SIZE);
+                    return false;
+                }
+                
                 return true;
             }
         }
@@ -65,7 +75,8 @@ namespace Pumper {
             remove_entry_ptr(idx);
             return false;
         }
-        return true;   
+        return true;
+
     }
 
     Status Bucket::Remove(const String &key)
