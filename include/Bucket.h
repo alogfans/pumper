@@ -20,6 +20,8 @@
 #include "Status.h"
 #include "Lock.h"
 
+#include <vector>
+
 #define SLICE_LENGTH    14
 #define INVALID_PTR     -1
 // #define BUCKET_HDR(stream, param)  ((BucketHeader *) ##stream)->##param;
@@ -46,10 +48,17 @@ namespace Pumper {
     public:
         Bucket();
         ~Bucket();
-        bool TryPut(const String &key, const String &value);
+
+        // Allow import or export payload. Note that the pointer argument
+        // can be NULL, which means that scratch from memory
+        Status Import(int8_t * buffer);
+        Status Export(int8_t * buffer);
+
+        bool Put(const String &key, const String &value);
         Status Remove(const String &key);
         bool Exist(const String &key);
-        bool TryGet(const String &key, String &value);
+        bool Get(const String &key, String &value);
+        std::vector<String> ListKeys();
         
         Status PrintDebugInfo();
         Status Defrag();

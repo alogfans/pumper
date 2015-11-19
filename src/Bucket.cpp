@@ -20,11 +20,7 @@ namespace Pumper {
     {
         payload = new int8_t[PAGE_SIZE];
         ERROR_ASSERT(payload);
-        BucketHeader * hdr = (BucketHeader *) payload;
-
-        hdr->count_entry_ptr = 0;
-        hdr->count_slice = 0;
-        hdr->first_free_slice = INVALID_PTR; 
+        Import(NULL);
     }
 
     Bucket::~Bucket()
@@ -33,7 +29,33 @@ namespace Pumper {
             delete[] payload;
     }
 
-    bool Bucket::TryPut(const String &key, const String &value)
+    Status Bucket::Import(int8_t * buffer)
+    {
+        if (buffer == NULL)
+        {
+            memset(payload, 0, PAGE_SIZE);
+            BucketHeader * hdr = (BucketHeader *) payload;
+            hdr->count_entry_ptr = 0;
+            hdr->count_slice = 0;
+            hdr->first_free_slice = INVALID_PTR;
+        }
+        else
+        {
+            memcpy(payload, buffer, PAGE_SIZE);
+        }
+        RETURN_SUCCESS();
+    }
+
+    Status Bucket::Export(int8_t * buffer)
+    {
+        if (buffer != NULL)
+        {
+            memcpy(buffer, payload, PAGE_SIZE);
+        }
+        RETURN_SUCCESS();
+    }
+
+    bool Bucket::Put(const String &key, const String &value)
     {
         int16_t count_entry_ptr = ((BucketHeader *) payload)->count_entry_ptr;
 
@@ -109,7 +131,7 @@ namespace Pumper {
         return false;
     }
 
-    bool Bucket::TryGet(const String &key, String &value)
+    bool Bucket::Get(const String &key, String &value)
     {
         int16_t count_entry_ptr = ((BucketHeader *) payload)->count_entry_ptr;
         for (int16_t i = 0; i < count_entry_ptr; i++) 
@@ -127,7 +149,26 @@ namespace Pumper {
 
     Status Bucket::Defrag()
     {
+        // To Defrag, a new object should be created and will install again.
+        // Upper layer should rebuild the index.
         RETURN_SUCCESS();
+    }
+
+    std::vector<String> Bucket::ListKeys()
+    {
+        std::vector<String> vec;
+        int16_t count_entry_ptr = ((BucketHeader *) payload)->count_entry_ptr;
+
+        for (int16_t i = 0; i < count_entry_ptr; i++)
+        {
+            EntryPtr * entry = get_entry_ptr(i);
+            if (entry->key_slice > 0 && entry->value_slice > 0)
+            {
+                vec.push_back(get_key(entry->key_slice));
+            }
+        }
+
+        return vec;
     }
 
     Status Bucket::PrintDebugInfo()
