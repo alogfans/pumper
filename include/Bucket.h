@@ -43,7 +43,7 @@ namespace Pumper {
         int16_t key_slice;
         int16_t value_slice;
     };
-    
+
     class Bucket {
     public:
         Bucket();
@@ -59,13 +59,14 @@ namespace Pumper {
         bool Exist(const String &key);
         bool Get(const String &key, String &value);
         std::vector<String> ListKeys();
-        
+
         Status PrintDebugInfo();
         Status Defrag();
     private:
         // 4096-byte content, which is identical to disk.
-        int8_t *payload;
-
+        int8_t * payload;
+        MutexLock mutex_lock;
+        
         EntryPtr * get_entry_ptr(int16_t entry_index);
         int16_t insert_entry_ptr();
         void remove_entry_ptr(int16_t entry_index);

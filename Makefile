@@ -4,10 +4,10 @@
 # For testing purpose only, embedded with Google Test Fixture (gtest).
 
 CC := gcc
-CFLAGS := -g -Wall -Wextra -std=c1x -rdynamic
+CFLAGS := -g -Wall -Wextra -Werror -std=c1x -rdynamic
 
 CXX := g++
-CXXFLAGS := -g -Wall -Wextra -std=c++11 -rdynamic
+CXXFLAGS := -g -Wall -Wextra -Werror -std=c++11 -rdynamic
 
 EXECUTIVE_DIRECTORY := test
 INTERMEDIATE_DIRECTORY := build

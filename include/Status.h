@@ -27,6 +27,10 @@
     return STATUS_SUCCESS; \
 } while(0);
 
+#define RETURN_INFORMATION(msg) do { \
+    return Status(Success, msg); \
+} while(0);
+
 #define RETURN_WARNING(msg) do { \
     char buffer[256]; \
     sprintf(buffer, "%s\n  at function %s:%s() at line %d", msg, __FILE__, __func__, __LINE__); \
@@ -53,7 +57,7 @@
 
 #define RETHROW_ON_EXCEPTION(cond) do { \
     Status status = (cond); \
-    if (!(status == STATUS_SUCCESS)) \
+    if ((status.GetLogLevel() != Success)) \
         return status; \
 } while(0);
 

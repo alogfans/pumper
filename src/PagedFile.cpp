@@ -195,6 +195,16 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    bool PagedFile::IsFileOpened() const
+    {
+        return is_file_opened;
+    }
+
+    int32_t PagedFile::GetTotalPages() const
+    {
+        return header_content.alloc_pages;
+    }
+
     uint16_t PagedFile::calculate_checksum(Header *hdr)
     {
         uint16_t *reinterpret = (uint16_t *) hdr;

@@ -57,6 +57,9 @@ namespace Pumper {
 
         Status SetRootPage(int32_t page_id);
         Status GetRootPage(int32_t &page_id);
+
+        bool IsFileOpened() const;
+        int32_t GetTotalPages() const;
     private:
         // calculate the file header checksum
         static uint16_t calculate_checksum(Header *hdr);

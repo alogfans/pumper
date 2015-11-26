@@ -31,6 +31,7 @@ namespace Pumper {
 
     Status Bucket::Import(int8_t * buffer)
     {
+        LockGuard lock_guard(mutex_lock);
         if (buffer == NULL)
         {
             memset(payload, 0, PAGE_SIZE);
@@ -57,6 +58,7 @@ namespace Pumper {
 
     bool Bucket::Put(const String &key, const String &value)
     {
+        LockGuard lock_guard(mutex_lock);
         int16_t count_entry_ptr = ((BucketHeader *) payload)->count_entry_ptr;
 
         int8_t rollback[PAGE_SIZE];
@@ -85,16 +87,10 @@ namespace Pumper {
         if (idx < 0)
             return false;
         EntryPtr * entry = get_entry_ptr(idx);
-        if (set_key(entry->key_slice, key) < 0)
+        if (set_key(entry->key_slice, key) < 0 || 
+            set_key(entry->value_slice, value) < 0)
         {
-            remove_entry_ptr(idx);
-            return false;
-        }
-
-        if (set_key(entry->value_slice, value) < 0)
-        {
-            remove_key(entry->key_slice);
-            remove_entry_ptr(idx);
+            memcpy(payload, rollback, PAGE_SIZE);
             return false;
         }
         return true;
@@ -103,6 +99,7 @@ namespace Pumper {
 
     Status Bucket::Remove(const String &key)
     {
+        LockGuard lock_guard(mutex_lock);
         int16_t count_entry_ptr = ((BucketHeader *) payload)->count_entry_ptr;
         for (int16_t i = 0; i < count_entry_ptr; i++) 
         {
@@ -189,7 +186,7 @@ namespace Pumper {
                 entry_ptr->key_slice, 
                 entry_ptr->value_slice);            
         }
-        
+
         printf("--- string slices ---\n");
         for (int16_t i = 0; i < hdr->count_slice; i++)
         {
