@@ -39,7 +39,18 @@ namespace Pumper
 
     void BTree::Remove(const String &key)
     {
+        int32_t hash = get_hash(key);
+        BTNode * key_leaf = find_leaf(hash);;
+        int left = 0;
 
+        while (key_leaf->keys[left] != hash)
+            left++;
+        for (int i = left + 1; i < key_leaf->num_keys; i++)
+            key_leaf->keys[i - 1] = key_leaf->keys[i];
+        for (int i = left + 1; i < N_ORDER - 1; i++)
+            key_leaf->pointers[i - 1] = key_leaf->pointers[i];
+        
+        key_leaf->num_keys--;
     }
 
     bool BTree::Search(const String &key, int32_t &page_id)
@@ -57,7 +68,7 @@ namespace Pumper
         {
             if (hash == leaf->keys[slot])
             {
-                page_id = slot;
+                page_id = leaf->pointers[slot];
                 return true;
             }
         }
@@ -71,7 +82,7 @@ namespace Pumper
         {
             if (image[i].num_keys)
             {
-                printf("\n*** PageNo = %d, IsLeaf = %d ***\n", i, image[i].is_leaf);
+                printf("*** PageNo = %d, IsLeaf = %d ***\n", i, image[i].is_leaf);
                 for (int j = 0; j < image[i].num_keys; j++)
                 {
                     printf("key = %d, pointer = %d\n", image[i].keys[j], image[i].pointers[j]);
@@ -150,12 +161,12 @@ namespace Pumper
         int32_t new_leaf_id = lease_page();
         BTNode *new_leaf = load_page(new_leaf_id);
 
-        memset(leaf, 0, sizeof(BTNode));
-        leaf->is_leaf = 1;
-        leaf->id = new_leaf_id;
-        leaf->parent = -1;
-        leaf->prev = -1;
-        leaf->next = -1;
+        memset(new_leaf, 0, sizeof(BTNode));
+        new_leaf->is_leaf = 1;
+        new_leaf->id = new_leaf_id;
+        new_leaf->parent = -1;
+        new_leaf->prev = -1;
+        new_leaf->next = -1;
 
         int32_t temp_keys[N_ORDER];
         int32_t temp_pointers[N_ORDER];

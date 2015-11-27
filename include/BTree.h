@@ -59,10 +59,10 @@ namespace Pumper
             return NULL;
         }
 
-        void unload_page(BTNode * bt_node)
-        {
+        //void unload_page(BTNode * bt_node)
+        //{
             // do nothing
-        }
+        //}
 
         int32_t lease_page()
         {
