@@ -40,17 +40,8 @@ namespace Pumper
     void BTree::Remove(const String &key)
     {
         int32_t hash = get_hash(key);
-        BTNode * key_leaf = find_leaf(hash);;
-        int left = 0;
-
-        while (key_leaf->keys[left] != hash)
-            left++;
-        for (int i = left + 1; i < key_leaf->num_keys; i++)
-            key_leaf->keys[i - 1] = key_leaf->keys[i];
-        for (int i = left + 1; i < N_ORDER - 1; i++)
-            key_leaf->pointers[i - 1] = key_leaf->pointers[i];
-        
-        key_leaf->num_keys--;
+        BTNode * key_leaf = find_leaf(hash);
+        delete_entry(key_leaf, hash);
     }
 
     bool BTree::Search(const String &key, int32_t &page_id)
@@ -330,6 +321,195 @@ namespace Pumper
         }
 
         insert_into_parent(old_node, new_node, new_key);
+    }
+
+    void BTree::delete_entry(BTNode * node, int hash)
+    {
+        int left = 0;
+        int num_pointers = node->is_leaf ? node->num_keys : node->num_keys + 1;
+
+        while (node->keys[left] != hash)
+            left++;
+        for (int i = left + 1; i < node->num_keys; i++)
+            node->keys[i - 1] = node->keys[i];
+        for (int i = left + 1; i < num_pointers; i++)
+            node->pointers[i - 1] = node->pointers[i];
+        
+        node->num_keys--;
+
+        /*
+        if (node->id == root && node->num_keys == 0) 
+            adjust_root();
+        else
+        {
+            int min_keys = node->is_leaf ? (N_ORDER - 1) / 2 : N_ORDER / 2 - 1;
+            int capacity = node->is_leaf ? N_ORDER : N_ORDER - 1;
+
+            if (node->num_keys >= min_keys)
+                return;
+
+            BTNode *parent_node = load_page(node->parent);
+
+            int neighbor_index;
+            for (int i = 0; i <= parent_node->num_keys; i++)
+            {
+                if (parent_node->pointers[i] == node->id)
+                {
+                    neighbor_index = i - 1;
+                    break;
+                }
+            }
+
+            int k_prime_index = neighbor_index == -1 ? 0 : neighbor_index;
+            int k_prime = parent_node->keys[k_prime_index];
+            BTNode *neighbor = load_page(neighbor_index == -1 ? 
+                parent_node->pointers[1] : parent_node->pointers[neighbor_index]);
+
+            if (neighbor->num_keys + node->num_keys < capacity)
+                coalesce_nodes(node, neighbor, neighbor_index, k_prime);
+            else
+                redistribute_nodes(node, neighbor, neighbor_index, k_prime_index, k_prime);      
+        }
+        */
+    }
+
+    void BTree::adjust_root() 
+    {
+        BTNode *root_node = load_page(root);
+
+        if (!root_node->is_leaf) {
+            root = root_node->pointers[0];
+            root_node = load_page(root);
+            root_node->parent = -1;
+        }
+        else
+        {
+            root = -1;
+        }
+    }
+
+    void BTree::coalesce_nodes(BTNode * node, BTNode * neighbor, int neighbor_index, int k_prime) 
+    {
+        int i, j, neighbor_insertion_index, node_end;
+
+        if (neighbor_index == -1) 
+        {
+            // swap node and neighbor
+            // swap_btnode(node, neighbor);
+        }
+
+        neighbor_insertion_index = neighbor->num_keys;
+
+        if (!node->is_leaf) 
+        {
+            neighbor->keys[neighbor_insertion_index] = k_prime;
+            neighbor->num_keys++;
+
+            node_end = node->num_keys;
+
+            for (i = neighbor_insertion_index + 1, j = 0; j < node_end; i++, j++) 
+            {
+                neighbor->keys[i] = node->keys[j];
+                neighbor->pointers[i] = node->pointers[j];
+                neighbor->num_keys++;
+                node->num_keys--;
+            }
+
+            neighbor->pointers[i] = node->pointers[j];
+
+            for (i = 0; i < neighbor->num_keys + 1; i++) 
+            {
+                BTNode * tmp = load_page(neighbor->pointers[i]);
+                tmp->parent = neighbor->id;
+            }
+        }
+        else 
+        {
+            for (i = neighbor_insertion_index, j = 0; j < node->num_keys; i++, j++) 
+            {
+                neighbor->keys[i] = node->keys[j];
+                neighbor->pointers[i] = node->pointers[j];
+                neighbor->num_keys++;
+            }
+            neighbor->pointers[N_ORDER - 1] = node->pointers[N_ORDER - 1];
+        }
+
+        BTNode * parent_node = load_page(node->parent);
+        delete_entry(parent_node, k_prime);
+    }
+
+    void BTree::redistribute_nodes(BTNode * node, BTNode * neighbor, int neighbor_index, 
+        int k_prime_index, int k_prime) 
+    {
+        int i;
+        BTNode * parent_node;
+
+        if (neighbor_index != -1) {
+            if (!node->is_leaf)
+                node->pointers[node->num_keys + 1] = node->pointers[node->num_keys];
+
+            for (i = node->num_keys; i > 0; i--) 
+            {
+                node->keys[i] = node->keys[i - 1];
+                node->pointers[i] = node->pointers[i - 1];
+            }
+
+            if (!node->is_leaf) 
+            {
+                node->pointers[0] = neighbor->pointers[neighbor->num_keys];
+
+                BTNode * tmp = load_page(neighbor->pointers[0]);
+                tmp->parent = node->id;
+                neighbor->pointers[neighbor->num_keys] = -1;
+                node->keys[0] = k_prime;
+
+                parent_node = load_page(node->parent);
+                parent_node->keys[k_prime_index] = neighbor->keys[neighbor->num_keys - 1];
+            }
+            else 
+            {
+                node->pointers[0] = neighbor->pointers[neighbor->num_keys - 1];
+                neighbor->pointers[neighbor->num_keys - 1] = -1;
+                node->keys[0] = neighbor->keys[neighbor->num_keys - 1];
+
+                parent_node = load_page(node->parent);
+                parent_node->keys[k_prime_index] = node->keys[0];
+            }
+        }
+        else 
+        {  
+            if (node->is_leaf) 
+            {
+                node->keys[node->num_keys] = neighbor->keys[0];
+                node->pointers[node->num_keys] = neighbor->pointers[0];
+
+                parent_node = load_page(node->parent);
+                parent_node->keys[k_prime_index] = neighbor->keys[1];
+            }
+            else 
+            {
+                node->keys[node->num_keys] = k_prime;
+                node->pointers[node->num_keys + 1] = neighbor->pointers[0];
+                BTNode * tmp = load_page(node->pointers[node->num_keys + 1]);
+                tmp->parent = node->id;
+
+                parent_node = load_page(node->parent);
+                parent_node->keys[k_prime_index] = neighbor->keys[0];
+            }
+
+            for (i = 0; i < neighbor->num_keys - 1; i++) 
+            {
+                neighbor->keys[i] = neighbor->keys[i + 1];
+                neighbor->pointers[i] = neighbor->pointers[i + 1];
+            }
+
+            if (!node->is_leaf)
+                neighbor->pointers[i] = neighbor->pointers[i + 1];
+        }
+
+        node->num_keys++;
+        neighbor->num_keys--;
+
     }
 
 } // namespace Pumper
