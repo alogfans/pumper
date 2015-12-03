@@ -6,13 +6,15 @@
 // property.
 
 #include "BTree.h"
+#include "PageHandle.h"
 
 namespace Pumper
 {
 
-    BTree::BTree() : root(-1)
+    BTree::BTree(PagedFile &pf) : pf(pf)
     {
-        memset(image, 0, sizeof(image));
+        ERROR_ASSERT(pf.IsFileOpened());         
+        pf.GetRootPage(root);
     }
 
     BTree::~BTree()
@@ -34,6 +36,7 @@ namespace Pumper
                 insert_in_leaf(leaf, hash, page_id);
             else
                 insert_in_leaf_splitted(leaf, hash, page_id);
+            unload_page(leaf);
         }
     }
 
@@ -42,6 +45,7 @@ namespace Pumper
         int32_t hash = get_hash(key);
         BTNode * key_leaf = find_leaf(hash);
         delete_entry(key_leaf, hash);
+        unload_page(key_leaf);
     }
 
     bool BTree::Search(const String &key, int32_t &page_id)
@@ -60,15 +64,17 @@ namespace Pumper
             if (hash == leaf->keys[slot])
             {
                 page_id = leaf->pointers[slot];
+                unload_page(leaf);
                 return true;
             }
         }
-
+        unload_page(leaf);
         return false;
     }
 
     void BTree::PrintDebugInfo()
     {
+        /*
         for (int i = 0; i < 32; i++)
         {
             if (image[i].num_keys)
@@ -80,6 +86,7 @@ namespace Pumper
                 }
             }
         }
+        */
     }
 
     BTNode * BTree::find_leaf(int32_t hash)
@@ -94,7 +101,8 @@ namespace Pumper
             while (slot < node->num_keys && hash >= node->keys[slot])
                 slot++;
             next = node->pointers[slot];
-            node = load_page(next);;
+            unload_page(node);
+            node = load_page(next);
         }
 
         return node;
@@ -115,6 +123,7 @@ namespace Pumper
     void BTree::make_root_leaf(int hash, int page_id)
     {
         root = lease_page();
+        pf.SetRootPage(root);
         BTNode *node = load_page(root);
 
         memset(node, 0, sizeof(BTNode));
@@ -128,6 +137,8 @@ namespace Pumper
         node->pointers[0] = page_id;
         node->pointers[N_ORDER - 1] = -1;
         node->num_keys++;
+
+        unload_page(node);
     }
 
     void BTree::insert_in_leaf(BTNode * leaf, int hash, int page_id)
@@ -203,6 +214,8 @@ namespace Pumper
 
         int32_t new_key = new_leaf->keys[0];
         insert_into_parent(leaf, new_leaf, new_key);
+
+        unload_page(new_leaf);
     }
 
     void BTree::insert_into_parent(BTNode * left, BTNode * right, int hash)
@@ -221,12 +234,15 @@ namespace Pumper
                 insert_node(parent, left_index, hash, right);
             else
                 insert_node_split(parent, left_index, hash, right); 
+
+            unload_page(parent);
         }
     }
 
     void BTree::insert_into_new_root(BTNode * left, BTNode * right, int32_t key)
     {
         root = lease_page();
+        pf.SetRootPage(root);
         BTNode *node = load_page(root);
 
         memset(node, 0, sizeof(BTNode));
@@ -242,6 +258,8 @@ namespace Pumper
         node->num_keys++;
         left->parent = root;
         right->parent = root;
+
+        unload_page(node);
     }
 
     void BTree::insert_node(BTNode * parent, int left_index, int32_t key, BTNode * right)
@@ -318,9 +336,11 @@ namespace Pumper
         {
             BTNode * child = load_page(new_node->pointers[i]);
             child->parent = new_node->id;
+            unload_page(child);
         }
 
         insert_into_parent(old_node, new_node, new_key);
+        unload_page(new_node);
     }
 
     void BTree::delete_entry(BTNode * node, int hash)
@@ -365,27 +385,39 @@ namespace Pumper
             BTNode *neighbor = load_page(neighbor_index == -1 ? 
                 parent_node->pointers[1] : parent_node->pointers[neighbor_index]);
 
-            if (neighbor->num_keys + node->num_keys < capacity)
+            if (neighbor->num_keys + node->num_keys < capacity) {
+                int node_id = node->id;
                 coalesce_nodes(node, neighbor, neighbor_index, k_prime);
+                recycle_page(node_id);
+            }
             else
-                redistribute_nodes(node, neighbor, neighbor_index, k_prime_index, k_prime);      
+                redistribute_nodes(node, neighbor, neighbor_index, k_prime_index, k_prime);
+
+            unload_page(parent_node);
+            unload_page(neighbor);
         }
         */
     }
 
     void BTree::adjust_root() 
     {
+        int32_t orig_root = root;
         BTNode *root_node = load_page(root);
 
         if (!root_node->is_leaf) {
             root = root_node->pointers[0];
+            pf.SetRootPage(root);
+            unload_page(root_node);
             root_node = load_page(root);
-            root_node->parent = -1;
+            root_node->parent = -1;            
         }
         else
         {
             root = -1;
+            pf.SetRootPage(root);
         }
+        unload_page(root_node);
+        recycle_page(orig_root);
     }
 
     void BTree::coalesce_nodes(BTNode * node, BTNode * neighbor, int neighbor_index, int k_prime) 
@@ -396,6 +428,10 @@ namespace Pumper
         {
             // swap node and neighbor
             // swap_btnode(node, neighbor);
+            BTNode dummy;
+            memcpy(&dummy, node, sizeof(BTNode));
+            memcpy(node, neighbor, sizeof(BTNode));
+            memcpy(neighbor, node, sizeof(BTNode));
         }
 
         neighbor_insertion_index = neighbor->num_keys;
@@ -421,6 +457,7 @@ namespace Pumper
             {
                 BTNode * tmp = load_page(neighbor->pointers[i]);
                 tmp->parent = neighbor->id;
+                unload_page(tmp);
             }
         }
         else 
@@ -436,6 +473,7 @@ namespace Pumper
 
         BTNode * parent_node = load_page(node->parent);
         delete_entry(parent_node, k_prime);
+        unload_page(parent_node);
     }
 
     void BTree::redistribute_nodes(BTNode * node, BTNode * neighbor, int neighbor_index, 
@@ -460,11 +498,14 @@ namespace Pumper
 
                 BTNode * tmp = load_page(neighbor->pointers[0]);
                 tmp->parent = node->id;
+                unload_page(tmp);
+
                 neighbor->pointers[neighbor->num_keys] = -1;
                 node->keys[0] = k_prime;
 
                 parent_node = load_page(node->parent);
                 parent_node->keys[k_prime_index] = neighbor->keys[neighbor->num_keys - 1];
+                unload_page(parent_node);
             }
             else 
             {
@@ -474,6 +515,7 @@ namespace Pumper
 
                 parent_node = load_page(node->parent);
                 parent_node->keys[k_prime_index] = node->keys[0];
+                unload_page(parent_node);
             }
         }
         else 
@@ -485,16 +527,20 @@ namespace Pumper
 
                 parent_node = load_page(node->parent);
                 parent_node->keys[k_prime_index] = neighbor->keys[1];
+                unload_page(parent_node);
             }
             else 
             {
                 node->keys[node->num_keys] = k_prime;
                 node->pointers[node->num_keys + 1] = neighbor->pointers[0];
+
                 BTNode * tmp = load_page(node->pointers[node->num_keys + 1]);
                 tmp->parent = node->id;
+                unload_page(tmp);
 
                 parent_node = load_page(node->parent);
                 parent_node->keys[k_prime_index] = neighbor->keys[0];
+                unload_page(parent_node);
             }
 
             for (i = 0; i < neighbor->num_keys - 1; i++) 
@@ -510,6 +556,37 @@ namespace Pumper
         node->num_keys++;
         neighbor->num_keys--;
 
+    }
+
+    BTNode * BTree::load_page(int32_t id)
+    {
+        BTNode * bt_node = new BTNode();
+        PageHandle ph;
+        ph.OpenPage(pf, id);
+        ph.Read((char *) bt_node, sizeof(BTNode));
+        ph.ClosePage();
+        return bt_node;
+    }
+
+    void BTree::unload_page(BTNode * bt_node)
+    {
+        PageHandle ph;
+        ph.OpenPage(pf, bt_node->id);
+        ph.Write((char *) bt_node, sizeof(BTNode));
+        ph.ClosePage();
+        delete bt_node;
+    }
+
+    int32_t BTree::lease_page()
+    {
+        int32_t id;
+        pf.AllocatePage(id);
+        return id;
+    }
+
+    void BTree::recycle_page(int32_t id)
+    {
+        pf.ReleasePage(id);
     }
 
 } // namespace Pumper

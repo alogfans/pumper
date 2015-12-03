@@ -11,6 +11,7 @@
 #include "Types.h"
 #include "Status.h"
 #include "Lock.h"
+#include "PagedFile.h"
 
 #define N_ORDER ((PAGE_SIZE - 24) / 8)
 
@@ -29,7 +30,7 @@ namespace Pumper
     class BTree
     {
     public:
-        BTree();
+        BTree(PagedFile &pf);
         ~BTree();
 
         void Insert(const String &key, int32_t page_id);
@@ -55,30 +56,13 @@ namespace Pumper
             int k_prime_index, int k_prime);
         void adjust_root();
 
-        // Test only
-        BTNode * load_page(int32_t id)
-        {
-            if (id >= 0 && id < alloc)
-                return &image[id];
+        BTNode * load_page(int32_t id);
+        void unload_page(BTNode * bt_node);
+        int32_t lease_page();
+        void recycle_page(int32_t id);
 
-            return NULL;
-        }
-
-        //void unload_page(BTNode * bt_node)
-        //{
-            // do nothing
-        //}
-
-        int32_t lease_page()
-        {
-            int32_t id = alloc;
-            alloc++;
-            return id;
-        }
-
-        int     alloc = 0;
-        int     root;
-        BTNode  image[32];
+        PagedFile &pf;
+        int32_t root;
     };
 } // namespace Pumper
 
