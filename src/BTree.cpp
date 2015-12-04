@@ -72,6 +72,30 @@ namespace Pumper
         return false;
     }
 
+    bool BTree::Update(const String &key, int32_t new_page_id)
+    {
+        int32_t hash = get_hash(key);
+        int32_t slot;
+
+        if (root < 0)
+            return false;
+
+        BTNode *leaf = find_leaf(hash);
+        
+        // leaf should be leaf part now
+        for (slot = 0; slot < leaf->num_keys; slot++)
+        {
+            if (hash == leaf->keys[slot])
+            {
+                leaf->pointers[slot] = new_page_id;
+                unload_page(leaf);
+                return true;
+            }
+        }
+        unload_page(leaf);
+        return false;
+    }
+
     void BTree::PrintDebugInfo()
     {
         /*

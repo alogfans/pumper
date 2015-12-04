@@ -44,6 +44,7 @@ namespace Pumper {
 
         // Fast lookup, which specified page_id
         Status Put(int32_t page_id, const String& key, const String& value);
+        Status Put(const String& key, const String& value, int32_t &page_id, int32_t first_scan = 0);
         Status Get(int32_t page_id, const String& key, String& value);
         Status Remove(int32_t page_id, const String& key);
         bool Contains(int32_t page_id, const String& key);

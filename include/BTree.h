@@ -36,7 +36,8 @@ namespace Pumper
         void Insert(const String &key, int32_t page_id);
         void Remove(const String &key);
         bool Search(const String &key, int32_t &page_id);
-
+        bool Update(const String &key, int32_t new_page_id);
+        
         void PrintDebugInfo();
 
     private:

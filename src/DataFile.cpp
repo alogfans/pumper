@@ -168,6 +168,41 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    Status DataFile::Put(const String& key, const String& value, int32_t &page_id, int32_t first_scan)
+    {
+        page_id = first_scan;
+        int32_t total_pages = paged_file.GetTotalPages();      
+        for (; page_id < total_pages; page_id++)
+        {
+            if (Contains(page_id, key))
+                break;
+        }
+
+        if (page_id != total_pages)
+        {
+            // Entry existed, try to rewrite it, otherwise, like
+            // non-existed entry, append it.
+            if (Put(page_id, key, value) == STATUS_SUCCESS)
+            {
+                RETURN_SUCCESS();
+            }
+            else
+            {
+                Remove(page_id, key);
+            }
+        }
+
+        if (total_pages != 0 && Put(total_pages - 1, key, value) == STATUS_SUCCESS)
+        {
+            RETURN_SUCCESS();
+        }
+
+        // Page is not enough, need more page...
+        RETHROW_ON_EXCEPTION(paged_file.AllocatePage(page_id));
+        RETHROW_ON_EXCEPTION(Put(page_id, key, value));
+        RETURN_SUCCESS();
+    }
+
     Status DataFile::Get(const String& key, String& value)
     {
         int32_t page_id = 0;
