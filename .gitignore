@@ -1,5 +1,6 @@
 build/
 .ycm_extra_conf.*
 gtest/
-*.dat
+*.DATA
+*.INDEX
 *.log

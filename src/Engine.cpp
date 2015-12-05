@@ -44,6 +44,7 @@ namespace Pumper {
 
         RETHROW_ON_EXCEPTION(data_file->OpenFile(file + ".DATA"));
         RETHROW_ON_EXCEPTION(index_file->OpenFile(file + ".INDEX"));
+        db_name = file;
         RETURN_SUCCESS();
     }
 
@@ -56,6 +57,7 @@ namespace Pumper {
         delete index_file;
         data_file = NULL;
         index_file = NULL;
+        db_name = "";
         RETURN_SUCCESS();
     }
 
@@ -187,5 +189,14 @@ namespace Pumper {
         return data_file->ListKeys();
     }
 
+    bool Engine::IsOpened()
+    {
+        return data_paged_file.IsFileOpened();
+    }
+
+    String Engine::OpenDbName()
+    {
+        return db_name;
+    }
 
 } // namespace Pumper

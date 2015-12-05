@@ -34,11 +34,15 @@ namespace Pumper {
         bool Contains(const String& key);
         std::vector<String> ListKeys();
 
+        bool IsOpened();
+        String OpenDbName();
+
     private:
         DataFile * data_file;
         IndexFile * index_file;
 
         PagedFile data_paged_file, index_paged_file;
+        String db_name;
     };
 } // namespace Pumper
 
