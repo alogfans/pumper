@@ -194,6 +194,7 @@ namespace Pumper {
 
         if (total_pages != 0 && Put(total_pages - 1, key, value) == STATUS_SUCCESS)
         {
+            page_id = total_pages - 1;
             RETURN_SUCCESS();
         }
 

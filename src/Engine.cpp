@@ -93,6 +93,7 @@ namespace Pumper {
             // XXX: To faster insert cost
             static int scan = 0;
             RETHROW_ON_EXCEPTION(data_file->Put(key, value, page_id, scan));
+            // printf("XXX %d\n", page_id);
             scan = page_id;
             RETHROW_ON_EXCEPTION(index_file->Put(key, page_id));
         }
