@@ -196,7 +196,7 @@ void func_list(int argc, char **argv)
 
 	std::vector<String> keys = engine.ListKeys();
 
-	for (int i = 0; i < keys.size(); i++)
+	for (uint32_t i = 0; i < keys.size(); i++)
 	{
 		String value;
 		engine.Get(keys[i], value);
@@ -214,7 +214,7 @@ void func_exit(int argc, char **argv)
 
 void func_help(int argc, char **argv)
 {
-	printf("Supported commands\n", N_EXEC_MAP);
+	printf("Supported commands\n");
 	for (uint32_t i = 0; i < N_EXEC_MAP; i++)
 	{
 		printf("%s\t%s\n", exec_map[i].cmd, exec_map[i].descriptor.c_str());
@@ -274,7 +274,7 @@ int main()
 	// Print banner
 	printf("Key/value Storage System: Desktop Edition\n");
 	printf("Copyright (C) 2015 Alogfans. All rights reserved.\n");
-	printf("Released Version: 1.0\n\n");
+	printf("Released Version: 1.0\n");
 
 	// Command process
 	char command[CMD_LEN] = { 0 };
