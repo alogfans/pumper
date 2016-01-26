@@ -32,7 +32,7 @@ namespace Pumper {
 			return Message(MessageType::Exception, "Usage: get <key> ", msg);
 
 		if (!engine.Contains(argv[1]))
-			return Message(MessageType::Response,  "<-- not existed -->", msg);
+			return Message(MessageType::Response,  "(NULL)", msg);
 		
 		String value;
 		if (engine.Get(argv[1], value) == STATUS_SUCCESS)
@@ -50,7 +50,7 @@ namespace Pumper {
 			return Message(MessageType::Exception, "Usage: remove <key> ", msg);
 
 		if (!engine.Contains(argv[1]))
-			return Message(MessageType::Response,  "<-- not existed -->", msg);
+			return Message(MessageType::Response,  "(NULL)", msg);
 
 		if (engine.Remove(argv[1]) == STATUS_SUCCESS)
 			return Message(MessageType::Response,  "OK", msg);
@@ -64,19 +64,21 @@ namespace Pumper {
 			return Message(MessageType::Exception, "File not opened", msg);
 
 		std::vector<String> keys = engine.ListKeys();
-		String output;
+		char output[100];
 
 		for (uint32_t i = 0; i < keys.size(); i++)
 		{
 			String value;
 			engine.Get(keys[i], value);
-			output += keys[i] + " " + value + "\n";
+			sprintf(output, "%s [%s, %s] ", output, keys[i].c_str(), value.c_str());
 		}
 
-		return Message(MessageType::Response, output, msg);
+		return Message(MessageType::Response, String(output), msg);
 	}
 
-	Daemon::Daemon()
+	Daemon::Daemon() : epoll_thread([=]() {
+		Singleton<Epoll>::Instance().Loop();
+	})
 	{
 	}
 
@@ -93,23 +95,20 @@ namespace Pumper {
 			this, std::placeholders::_1, std::placeholders::_2);
 
 		RETHROW_ON_EXCEPTION(tcpServer.Start(port, read_callback_bind));
-
-		// Will block forever. It may be a single thread.
-		Thread epoll_thread([=](){
-			Singleton<Epoll>::Instance().Loop();
-		});
-
     	RETHROW_ON_EXCEPTION(epoll_thread.Start());
-    	epoll_thread.Join();
-    	// This is the end!
-    	RETHROW_ON_EXCEPTION(Stop());
+		RETURN_SUCCESS();
+	}
 
+	Status Daemon::Join()
+	{
+		epoll_thread.Join();
+    	RETHROW_ON_EXCEPTION(Stop());
 		RETURN_SUCCESS();
 	}
 
 	Status Daemon::Stop()
 	{
-		RETHROW_ON_EXCEPTION(tcpServer.Stop());
+		// RETHROW_ON_EXCEPTION(tcpServer.Stop());
 		RETHROW_ON_EXCEPTION(engine.CloseDb());
 		RETURN_SUCCESS();
 	}
@@ -138,6 +137,9 @@ namespace Pumper {
 
 	Message Daemon::execute_command(const Message &msg)
 	{
+		if (!msg.Payload().size())
+			return Message(MessageType::Exception, "Unknown operation", msg);
+
 		char command[128] = { 0 };
 		int arg_cnt;
 		char * arg_val[128] = { NULL };
@@ -159,10 +161,14 @@ namespace Pumper {
 
 	String Daemon::read_callback(const TcpConnection& conn, const String& msg)
 	{
+		String output;
 		Message incoming(msg);
 		if (incoming.Type() == MessageType::Command)
-			return execute_command(incoming).ToPacket();
-		return Message(MessageType::Exception, "Illegal Message Type", incoming).ToPacket();
+			output = execute_command(incoming).ToPacket();
+		else
+			output = Message(MessageType::Exception, "Illegal Message Type", incoming).ToPacket();
+		printf("IN [%s] OUT [%s]\n", msg.c_str(), output.c_str());
+		return output;
 	}
 
 } // namespace Pumper

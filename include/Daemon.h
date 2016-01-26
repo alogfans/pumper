@@ -11,6 +11,7 @@
 #include "TcpServer.h"
 #include "Engine.h"
 #include "Message.h"
+#include "Thread.h"
 
 #include <functional>
 
@@ -22,10 +23,11 @@ namespace Pumper {
     	~Daemon();
 
     	Status Start(const String& file, int32_t port);
-
+        Status Join();
         Status Stop();
     private: 
     	Message execute_command(const Message &msg);
+        Thread epoll_thread;
         Engine engine;
     	TcpServer tcpServer;
 
