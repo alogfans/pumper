@@ -51,6 +51,7 @@ namespace Pumper {
 
         int32_t GetSocketDescriptor();
         String GetAddressPort();
+        int32_t GetPort();
 
     private:
         int32_t fd;

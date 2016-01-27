@@ -24,12 +24,15 @@ namespace Pumper {
 
     	Status Start(const String& file, int32_t port);
         Status Join();
+        Status UpdateChanges();
         Status Stop();
     private: 
     	Message execute_command(const Message &msg);
         Thread epoll_thread;
         Engine engine;
     	TcpServer tcpServer;
+
+        void epoll_thread_func(void * args);
 
         // Generic callback function
         String read_callback(const TcpConnection& conn, const String& msg);

@@ -109,33 +109,36 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
-    void Epoll::Loop()
+    void Epoll::Poll()
     {
-        while (true)
         {
+            LockGuard lock_guard(mutex);
+            if (pending_changes)
             {
-                LockGuard lock_guard(mutex);
-                if (pending_changes)
-                {
-                    pending_changes = false;
-                    cond.NotifyAll();
-                }
-            }
-
-            int32_t nfds = epoll_wait(pollfd, ready, MAX_EPOLL_FDS, -1);
-            int32_t fd;
-
-            for (int32_t i = 0; i < nfds; i++) {
-                fd = ready[i].data.fd;
-                // printf("Register event\n");
-                if (ready[i].events & EPOLLIN) 
-                    callback_list[fd].onRead(socket_list[fd]);
-                if (ready[i].events & EPOLLOUT) 
-                    callback_list[fd].onWrite(socket_list[fd]);
-                if (ready[i].events & (EPOLLRDHUP | EPOLLERR))
-                    callback_list[fd].onClose(socket_list[fd]);
+                pending_changes = false;
+                cond.NotifyAll();
             }
         }
+
+        int32_t nfds = epoll_wait(pollfd, ready, MAX_EPOLL_FDS, -1);
+        int32_t fd;
+
+        for (int32_t i = 0; i < nfds; i++) {
+            fd = ready[i].data.fd;
+            // printf("Register event\n");
+            if (ready[i].events & EPOLLIN) 
+                callback_list[fd].onRead(socket_list[fd]);
+            if (ready[i].events & EPOLLOUT) 
+                callback_list[fd].onWrite(socket_list[fd]);
+            if (ready[i].events & (EPOLLRDHUP | EPOLLERR))
+                callback_list[fd].onClose(socket_list[fd]);
+        }
+    }
+
+    void Epoll::Loop()
+    {
+        while (true) 
+            Poll();
     }
 
 } // namespace Pumper

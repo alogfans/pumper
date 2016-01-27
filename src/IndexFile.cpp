@@ -52,6 +52,12 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    Status IndexFile::UpdateChanges()
+    {
+        RETHROW_ON_EXCEPTION(paged_file.ForcePage());
+        RETURN_SUCCESS();
+    }
+
     Status IndexFile::Put(const String& key, int32_t data_pid)
     {
         btree->Insert(key, data_pid);

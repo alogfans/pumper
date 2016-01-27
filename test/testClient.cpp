@@ -28,11 +28,8 @@ int main()
 
 	Socket socket;
 	socket.Connect("127.0.0.1", 12306);
-	// Command process
 	char command[CMD_LEN] = { 0 };
-	int arg_cnt;
-	char * arg_val[CMD_LEN] = { NULL };
-
+	
 	while (1) 
 	{
 		printf("> ");
@@ -42,7 +39,15 @@ int main()
 		strcpy(buf, Message(MessageType::Command, command).ToPacket().c_str());
 		socket.SendBytes(buf, 128);
 		socket.ReceiveBytes(buf, 128);
-		printf("Query: [%s]\n", buf);
+		Message out(buf);
+		if (out.Type() == MessageType::Response)
+		{
+			printf("Response: [%s]\n", out.Payload().c_str());
+		}
+		else
+		{
+			printf("Exception: [%s]\n", out.Payload().c_str());
+		}
 	}
 
 	return 0;

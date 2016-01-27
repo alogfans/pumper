@@ -32,7 +32,7 @@ namespace Pumper {
 			return Message(MessageType::Exception, "Usage: get <key> ", msg);
 
 		if (!engine.Contains(argv[1]))
-			return Message(MessageType::Response,  "(NULL)", msg);
+			return Message(MessageType::Response,  "NULL", msg);
 		
 		String value;
 		if (engine.Get(argv[1], value) == STATUS_SUCCESS)
@@ -50,7 +50,7 @@ namespace Pumper {
 			return Message(MessageType::Exception, "Usage: remove <key> ", msg);
 
 		if (!engine.Contains(argv[1]))
-			return Message(MessageType::Response,  "(NULL)", msg);
+			return Message(MessageType::Response,  "NULL", msg);
 
 		if (engine.Remove(argv[1]) == STATUS_SUCCESS)
 			return Message(MessageType::Response,  "OK", msg);
@@ -65,25 +65,22 @@ namespace Pumper {
 
 		std::vector<String> keys = engine.ListKeys();
 		char output[100];
-
+		memset(output, 0, 100);
 		for (uint32_t i = 0; i < keys.size(); i++)
-		{
-			String value;
-			engine.Get(keys[i], value);
-			sprintf(output, "%s [%s, %s] ", output, keys[i].c_str(), value.c_str());
-		}
-
+			sprintf(output, "%s%s ", output, keys[i].c_str());
+		output[strlen(output) - 1] = '\0';
 		return Message(MessageType::Response, String(output), msg);
 	}
 
-	Daemon::Daemon() : epoll_thread([=]() {
+	Daemon::Daemon() : epoll_thread([](){
 		Singleton<Epoll>::Instance().Loop();
-	})
+	}, "epoll_thread")
 	{
 	}
 
     Daemon::~Daemon()
     {
+
     }
 
 	Status Daemon::Start(const String& file, int32_t port)
@@ -102,16 +99,21 @@ namespace Pumper {
 	Status Daemon::Join()
 	{
 		epoll_thread.Join();
-    	RETHROW_ON_EXCEPTION(Stop());
 		RETURN_SUCCESS();
 	}
 
 	Status Daemon::Stop()
 	{
-		// RETHROW_ON_EXCEPTION(tcpServer.Stop());
+		RETHROW_ON_EXCEPTION(tcpServer.Stop());
 		RETHROW_ON_EXCEPTION(engine.CloseDb());
 		RETURN_SUCCESS();
 	}
+
+    Status Daemon::UpdateChanges()
+    {
+        RETHROW_ON_EXCEPTION(engine.UpdateChanges());
+        RETURN_SUCCESS();
+    }
 
 	int parse(char *buffer, char **argv)
 	{
@@ -167,7 +169,7 @@ namespace Pumper {
 			output = execute_command(incoming).ToPacket();
 		else
 			output = Message(MessageType::Exception, "Illegal Message Type", incoming).ToPacket();
-		printf("IN [%s] OUT [%s]\n", msg.c_str(), output.c_str());
+		// printf("IN [%s] OUT [%s]\n", msg.c_str(), output.c_str());
 		return output;
 	}
 

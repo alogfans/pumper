@@ -49,6 +49,7 @@ namespace Pumper {
         // the fd will not be handled anymore
         Status PurgeCallbacks(std::shared_ptr<Socket> socket);
 
+        void Poll();
         // Start iteration. Requires to run in a seperate thread!
         void Loop();
     private:

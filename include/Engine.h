@@ -27,6 +27,7 @@ namespace Pumper {
 
         Status OpenDb(const String& file);
         Status CloseDb();
+        Status UpdateChanges();
 
         Status Put(const String& key, const String& value);
         Status Get(const String& key, String& value);

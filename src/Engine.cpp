@@ -61,6 +61,14 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    Status Engine::UpdateChanges()
+    {
+        WARNING_ASSERT(data_file && index_file);
+        RETHROW_ON_EXCEPTION(data_file->UpdateChanges());
+        RETHROW_ON_EXCEPTION(index_file->UpdateChanges());
+        RETURN_SUCCESS();
+    }
+
     Status Engine::Put(const String& key, const String& value)
     {
         WARNING_ASSERT(data_file && index_file);

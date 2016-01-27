@@ -29,6 +29,7 @@ namespace Pumper {
         // function, without modify hard disk, but most functions work well like disk.
         Status OpenFile(const String& file);
         Status Close();
+        Status UpdateChanges();
 
         Status Put(const String& key, int32_t data_pid);
         Status Get(const String& key, int32_t &data_pid);

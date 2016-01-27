@@ -52,6 +52,12 @@ namespace Pumper {
         RETURN_SUCCESS();
     }
 
+    Status DataFile::UpdateChanges()
+    {
+        RETHROW_ON_EXCEPTION(paged_file.ForcePage());
+        RETURN_SUCCESS();
+    }
+
     Status DataFile::Put(int32_t page_id, const String& key, const String& value)
     {
         PageHandle temp_ph;

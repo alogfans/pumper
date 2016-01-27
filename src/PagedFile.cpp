@@ -174,7 +174,7 @@ namespace Pumper {
     Status PagedFile::ForcePage(int32_t page_id)
     {
         WARNING_ASSERT(is_file_opened);
-        WARNING_ASSERT(page_id >= 0 && page_id < header_content.alloc_pages);
+        WARNING_ASSERT(page_id == ALL_PAGES || (page_id >= 0 && page_id < header_content.alloc_pages));
         RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().ForcePage(fd, page_id));
         RETURN_SUCCESS();
     }

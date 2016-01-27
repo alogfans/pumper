@@ -60,4 +60,19 @@ namespace Pumper {
         connection_pool.erase(socket);
     }
 
+    Status TcpServer::Stop(int32_t port)
+    {
+        std::map<std::shared_ptr<Socket>, ReadCallback>::iterator it;
+        for (it = callback_map.begin(); it != callback_map.end(); ++it)
+        {
+            if (it->first->GetPort() == port || port < 0)
+            {
+                // Unregister income requests
+                RETHROW_ON_EXCEPTION(Singleton<Epoll>::Instance().PurgeCallbacks(it->first));
+                RETHROW_ON_EXCEPTION(it->first->Close());
+            }
+        }
+        RETURN_SUCCESS();
+    }
+
 } // namespace Pumper

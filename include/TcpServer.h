@@ -26,7 +26,8 @@ namespace Pumper {
         ~TcpServer();
 
         Status Start(int32_t port, ReadCallback read_callback);
-
+        Status Stop(int32_t port = -1);
+        
         // The following methods will be used by Epoll.h
         void CreateConnection(std::shared_ptr<Socket> socket);
         void RemoveConnection(std::shared_ptr<Socket> socket);

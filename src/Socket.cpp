@@ -184,4 +184,9 @@ namespace Pumper {
         return String(buffer);
     }
 
+    int32_t Socket::GetPort()
+    {
+        return ntohs(sockaddr.sin_port);
+    }
+
 } // namespace Pumper

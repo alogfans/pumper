@@ -34,6 +34,7 @@ namespace Pumper {
         // function, without modify hard disk, but most functions work well like disk.
         Status OpenFile(const String& file);
         Status Close();
+        Status UpdateChanges();
 
         // Will be sequence looking-up, which is very inefficient
         Status Put(const String& key, const String& value);
