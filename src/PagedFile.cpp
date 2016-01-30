@@ -176,6 +176,19 @@ namespace Pumper {
         WARNING_ASSERT(is_file_opened);
         WARNING_ASSERT(page_id == ALL_PAGES || (page_id >= 0 && page_id < header_content.alloc_pages));
         RETHROW_ON_EXCEPTION(Singleton<Buffer>::Instance().ForcePage(fd, page_id));
+
+        if (is_header_dirty)
+        {
+            header_content.checksum = 0;
+            // header_content.checksum = calculate_checksum(&header_content);
+            int32_t header_length;
+            lseek(fd, 0, SEEK_SET);
+            header_length = write(fd, &header_content, SIZEOF_HEADER);
+            ERROR_ASSERT(header_length == SIZEOF_HEADER);
+
+            is_header_dirty = false;
+        }
+
         RETURN_SUCCESS();
     }
 
