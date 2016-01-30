@@ -47,6 +47,8 @@ namespace Pumper {
     const int32_t BUFFER_SIZE = 20;
     const int32_t PAGE_SIZE = 4096;
     
+    const int32_t MESSAGE_SIZE = 1024;
+
 } // namespace Pumper
 
 #endif // __TYPES_H__

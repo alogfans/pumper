@@ -64,8 +64,8 @@ namespace Pumper {
 			return Message(MessageType::Exception, "File not opened", msg);
 
 		std::vector<String> keys = engine.ListKeys();
-		char output[100];
-		memset(output, 0, 100);
+		char output[MESSAGE_SIZE];
+		memset(output, 0, MESSAGE_SIZE);
 		for (uint32_t i = 0; i < keys.size(); i++)
 			sprintf(output, "%s%s ", output, keys[i].c_str());
 		output[strlen(output) - 1] = '\0';
@@ -120,7 +120,7 @@ namespace Pumper {
 		int argc = 0;
 
 		int i = 0;
-		while (i < 128 && buffer[i] != '\0')
+		while (i < MESSAGE_SIZE && buffer[i] != '\0')
 		{
 			while(buffer[i] == ' ' || buffer[i] == '\t')
 				i++;
@@ -142,9 +142,9 @@ namespace Pumper {
 		if (!msg.Payload().size())
 			return Message(MessageType::Exception, "Unknown operation", msg);
 
-		char command[128] = { 0 };
+		char command[MESSAGE_SIZE] = { 0 };
 		int arg_cnt;
-		char * arg_val[128] = { NULL };
+		char * arg_val[MESSAGE_SIZE] = { NULL };
 		strcpy(command, msg.Payload().c_str());
 
 		arg_cnt = parse(command, arg_val);
@@ -169,7 +169,6 @@ namespace Pumper {
 			output = execute_command(incoming).ToPacket();
 		else
 			output = Message(MessageType::Exception, "Illegal Message Type", incoming).ToPacket();
-		// printf("IN [%s] OUT [%s]\n", msg.c_str(), output.c_str());
 		return output;
 	}
 

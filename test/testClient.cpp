@@ -35,10 +35,10 @@ int main()
 		printf("> ");
 		fgets(command, CMD_LEN, stdin);
 		command[strlen(command) - 1] = '\0';
-		char buf[128];
+		char buf[MESSAGE_SIZE];
 		strcpy(buf, Message(MessageType::Command, command).ToPacket().c_str());
-		socket.SendBytes(buf, 128);
-		socket.ReceiveBytes(buf, 128);
+		socket.SendBytes(buf, MESSAGE_SIZE);
+		socket.ReceiveBytes(buf, MESSAGE_SIZE);
 		Message out(buf);
 		if (out.Type() == MessageType::Response)
 		{

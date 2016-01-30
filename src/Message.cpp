@@ -101,7 +101,7 @@ namespace Pumper {
             builder += "E";
 
         builder += payload;
-        return builder;
+        return builder.substr(0, MESSAGE_SIZE);
     }
 
 } // namespace Pumper

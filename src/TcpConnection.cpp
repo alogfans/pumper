@@ -28,9 +28,9 @@ namespace Pumper {
 
     void TcpConnection::onRead(std::shared_ptr<Socket> socket)
     {
-        char internal_buffer[128] = { 0 };
+        char internal_buffer[MESSAGE_SIZE] = { 0 };
         
-        int length = socket->ReceiveBytes(internal_buffer, 128);
+        int length = socket->ReceiveBytes(internal_buffer, MESSAGE_SIZE);
         if (length == 0)
             return;
 
@@ -39,9 +39,9 @@ namespace Pumper {
         if (read_callback)
             sent_buffer = read_callback(*this, received_buffer);
 
-        memset(internal_buffer, 0, 128);
+        memset(internal_buffer, 0, MESSAGE_SIZE);
         strcpy(internal_buffer, sent_buffer.c_str());
-        socket->SendBytes(internal_buffer, 128);
+        socket->SendBytes(internal_buffer, MESSAGE_SIZE);
     }
 
     void TcpConnection::onClose(std::shared_ptr<Socket> socket)
@@ -59,9 +59,9 @@ namespace Pumper {
 
     void TcpConnection::Write(const std::string &data)
     {
-        char internal_buffer[128] = { 0 };
+        char internal_buffer[MESSAGE_SIZE] = { 0 };
         strcpy(internal_buffer, data.c_str());
-        client->SendBytes(internal_buffer, 128);
+        client->SendBytes(internal_buffer, MESSAGE_SIZE);
     }    
 
 } // namespace Pumper
