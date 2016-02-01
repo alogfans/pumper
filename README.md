@@ -25,9 +25,14 @@ To test the incompleted system, please use [Google Test](https://github.com/goog
 
 3. Create `build` folder, and execute `make` to compile ALL executives in `test` directory.
 
+## Usage Guide
+I've implemented a simple storage and index system and a shell through desktop-application or TCP/IP based environment (C/S style).
+* If you want to execute it locally, please run `./build/kvShell` after build them. The program also supports to create or unlink the database files.
+* If you want to execute server and console seperately, run `./build/testDaemon` first (make sure that in current directory the files `master.INDEX` and `master.DATA` existed, and port 10086 is NOT used), then run one or more client program `./build/testDaemon`. You may modify some constants of two source files to change the database name or port number.
+
 ## MIT License
 ```
-Copyright (C) 2015 Ren Feng.
+Copyright (C) 2015, 2016 Ren Feng.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
